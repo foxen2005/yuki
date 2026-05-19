@@ -188,7 +188,18 @@ Object.getOwnPropertyDescriptor = function(target, key) {
   window.open = function(url, target, features) {
     if (url && /^https?:/.test(String(url)) && isExternal(url)) {
       try { ipcRenderer.send('view:open-external', String(url)) } catch(e) {}
-      return null
+      // Devolver objeto ventana falso — si devolvemos null, algunas apps (WhatsApp/Meta)
+      // detectan "popup bloqueado" y hacen fallback con window.location.href hacia Facebook
+      const fakeWin = {
+        closed: false,
+        close()  { this.closed = true },
+        focus()  {},
+        blur()   {},
+        postMessage() {},
+        location: { href: String(url) },
+      }
+      setTimeout(() => { fakeWin.closed = true }, 300)
+      return fakeWin
     }
     return _open(url, target, features)
   }
