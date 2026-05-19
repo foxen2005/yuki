@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Yuki</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <div id="apps-list"></div>
+    <div id="sidebar-bottom">
+      <div class="divider"></div>
+      <button class="app-btn settings-btn" id="settings-toggle" title="Configuracion">⚙️</button>
+    </div>
+  </div>
+
+  <!-- Content — WebContentsViews se superponen nativamente sobre este div -->
+  <div id="content">
+    <div class="loading-overlay" id="loading-overlay">
+      <div class="spinner"></div>
+      <div class="loading-label" id="loading-label">Cargando...</div>
+    </div>
+  </div>
+
+  <!-- File inputs ocultos -->
+  <input type="file" id="file-input" accept="image/*" style="display:none" />
+  <input type="file" id="audio-file-input" accept="audio/*" style="display:none" />
+
+  <!-- Lock Screen -->
+  <div id="lock-overlay">
+    <div style="font-size:54px">🔒</div>
+    <div style="font-size:17px;font-weight:600;color:#e9edef">Yuki bloqueado</div>
+    <input type="password" id="lock-pin-input" placeholder="• • • •" maxlength="8" autocomplete="off" />
+    <div id="lock-error">PIN incorrecto</div>
+  </div>
+
+  <!-- Settings Drawer -->
+  <div id="settings-overlay">
+    <div id="settings-backdrop"></div>
+    <div id="settings-panel">
+
+      <div class="panel-header">
+        <span style="font-size:20px">⚙️</span>
+        <h2>Configuracion de Apps</h2>
+      </div>
+
+      <div class="panel-body">
+
+        <!-- Ajustes generales -->
+        <div class="section-title">Ajustes</div>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="settings-label">
+              <span class="settings-icon">🔔</span>
+              <div>
+                <div class="settings-name">Volumen notificaciones</div>
+                <div class="settings-desc">Sonido al recibir mensajes</div>
+              </div>
+            </div>
+            <div class="settings-control">
+              <input type="range" id="vol-slider" min="0" max="100" value="50" />
+              <span id="vol-value">50%</span>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span class="settings-icon">🎵</span>
+              <div>
+                <div class="settings-name">Sonido de notificación</div>
+                <div class="settings-desc">Elige el tono o sube tu propio archivo</div>
+              </div>
+            </div>
+            <div class="settings-control" style="flex-direction:column;align-items:flex-end;gap:6px">
+              <select id="sound-select">
+                <option value="default">Por defecto</option>
+                <option value="suave">Suave</option>
+                <option value="campana">Campana</option>
+                <option value="alerta">Alerta</option>
+                <option value="custom">Personalizado…</option>
+              </select>
+              <div id="sound-file-row" style="display:none;align-items:center;gap:6px">
+                <button id="btn-sound-file">📂 Elegir archivo</button>
+                <span id="sound-file-name">Sin archivo</span>
+              </div>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span class="settings-icon">🔕</span>
+              <div>
+                <div class="settings-name">No molestar</div>
+                <div class="settings-desc">Silencia todos los sonidos</div>
+              </div>
+            </div>
+            <div class="settings-control">
+              <label class="toggle">
+                <input type="checkbox" id="dnd-toggle" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Seguridad -->
+        <div class="section-title" style="margin-top:16px">Seguridad</div>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="settings-label">
+              <span class="settings-icon">🔒</span>
+              <div>
+                <div class="settings-name">Bloquear al minimizar</div>
+                <div class="settings-desc">Pide PIN al restaurar la ventana</div>
+              </div>
+            </div>
+            <div class="settings-control">
+              <label class="toggle">
+                <input type="checkbox" id="lock-enabled-toggle" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="settings-row" id="pin-setup-row">
+            <div class="settings-label">
+              <span class="settings-icon">🔢</span>
+              <div>
+                <div class="settings-name">PIN</div>
+                <div class="settings-desc" id="pin-status">Sin PIN configurado</div>
+              </div>
+            </div>
+            <div class="settings-control" style="gap:6px">
+              <input type="password" id="pin-setup-input" placeholder="mín. 4 chars" maxlength="8"
+                style="width:110px;background:#111b21;border:1px solid #374045;border-radius:6px;color:#e9edef;padding:5px 8px;outline:none;font-size:13px;user-select:text;-webkit-user-select:text;" />
+              <button class="backup-btn" id="pin-save-btn">Guardar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Memoria RAM -->
+        <div class="section-title" style="margin-top:16px">Memoria RAM</div>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="settings-label">
+              <span class="settings-icon">⏰</span>
+              <div>
+                <div class="settings-name">Auto-sleep</div>
+                <div class="settings-desc">Hiberna apps inactivas para liberar RAM</div>
+              </div>
+            </div>
+            <div class="settings-control">
+              <select id="auto-sleep-select">
+                <option value="0">Desactivado</option>
+                <option value="15">15 min</option>
+                <option value="30" selected>30 min</option>
+                <option value="60">60 min</option>
+              </select>
+            </div>
+          </div>
+          <div class="settings-row" style="flex-direction:column;align-items:stretch">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <span class="settings-icon">💾</span>
+              <span class="settings-name">Uso de memoria</span>
+            </div>
+            <div id="memory-list" style="padding:0 4px">
+              <div style="font-size:11px;color:#667781">Esperando datos...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Datos y backup -->
+        <div class="section-title" style="margin-top:16px">Datos y backup</div>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="settings-label">
+              <span class="settings-icon">💾</span>
+              <div>
+                <div class="settings-name">Exportar configuración</div>
+                <div class="settings-desc">Guarda apps y ajustes en un archivo JSON</div>
+              </div>
+            </div>
+            <div class="settings-control">
+              <button class="backup-btn" id="btn-export-config">Exportar</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span class="settings-icon">📂</span>
+              <div>
+                <div class="settings-name">Importar configuración</div>
+                <div class="settings-desc">Restaura desde un backup anterior</div>
+              </div>
+            </div>
+            <div class="settings-control">
+              <button class="backup-btn" id="btn-import-config">Importar</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span class="settings-icon">🔑</span>
+              <div>
+                <div class="settings-name">Sesiones de apps</div>
+                <div class="settings-desc">Abre la carpeta con los datos de WhatsApp, Gmail, etc.</div>
+              </div>
+            </div>
+            <div class="settings-control">
+              <button class="backup-btn" id="btn-open-userdata">Ver carpeta</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Catálogo -->
+        <div class="section-title" style="margin-top:16px">Agregar app</div>
+
+        <div class="catalog-section-label">Mensajería</div>
+        <div class="catalog-grid" id="catalog-grid">
+          <div class="catalog-item" data-name="WhatsApp" data-icon-key="whatsapp" data-url="https://web.whatsapp.com">
+            <div class="icon" id="cat-icon-whatsapp">💬</div><div class="name">WhatsApp</div>
+          </div>
+          <div class="catalog-item" data-name="Telegram" data-icon="✈️" data-url="https://web.telegram.org/k/">
+            <div class="icon">✈️</div><div class="name">Telegram</div>
+          </div>
+          <div class="catalog-item" data-name="Discord" data-icon="🎮" data-url="https://discord.com/app">
+            <div class="icon">🎮</div><div class="name">Discord</div>
+          </div>
+          <div class="catalog-item" data-name="Slack" data-icon="🔷" data-url="https://app.slack.com">
+            <div class="icon">🔷</div><div class="name">Slack</div>
+          </div>
+          <div class="catalog-item" data-name="Microsoft Teams" data-icon="🟦" data-url="https://teams.microsoft.com">
+            <div class="icon">🟦</div><div class="name">Teams</div>
+          </div>
+          <div class="catalog-item" data-name="Signal" data-icon="🔒" data-url="https://app.signal.org">
+            <div class="icon">🔒</div><div class="name">Signal</div>
+          </div>
+          <div class="catalog-item" data-name="Skype" data-icon="🔵" data-url="https://web.skype.com">
+            <div class="icon">🔵</div><div class="name">Skype</div>
+          </div>
+          <div class="catalog-item" data-name="Messenger" data-icon="💙" data-url="https://www.messenger.com">
+            <div class="icon">💙</div><div class="name">Messenger</div>
+          </div>
+          <div class="catalog-item" data-name="Instagram" data-icon="📸" data-url="https://www.instagram.com/direct/inbox/">
+            <div class="icon">📸</div><div class="name">Instagram</div>
+          </div>
+          <div class="catalog-item" data-name="X / Twitter" data-icon="🐦" data-url="https://x.com/messages">
+            <div class="icon">🐦</div><div class="name">X DMs</div>
+          </div>
+          <div class="catalog-item" data-name="LinkedIn" data-icon="💼" data-url="https://www.linkedin.com/messaging/">
+            <div class="icon">💼</div><div class="name">LinkedIn</div>
+          </div>
+        </div>
+
+        <div class="catalog-section-label">Email</div>
+        <div class="catalog-grid">
+          <div class="catalog-item" data-name="Gmail" data-icon-key="gmail" data-url="https://mail.google.com/mail/u/0/">
+            <div class="icon" id="cat-icon-gmail">📧</div><div class="name">Gmail</div>
+          </div>
+          <div class="catalog-item" data-name="Outlook" data-icon="📨" data-url="https://outlook.live.com/mail/">
+            <div class="icon">📨</div><div class="name">Outlook</div>
+          </div>
+          <div class="catalog-item" data-name="ProtonMail" data-icon="🛡️" data-url="https://mail.proton.me">
+            <div class="icon">🛡️</div><div class="name">ProtonMail</div>
+          </div>
+          <div class="catalog-item" data-name="Yahoo Mail" data-icon="📬" data-url="https://mail.yahoo.com">
+            <div class="icon">📬</div><div class="name">Yahoo Mail</div>
+          </div>
+        </div>
+
+        <div class="catalog-section-label">Productividad</div>
+        <div class="catalog-grid">
+          <div class="catalog-item" data-name="Notion" data-icon="📝" data-url="https://www.notion.so">
+            <div class="icon">📝</div><div class="name">Notion</div>
+          </div>
+          <div class="catalog-item" data-name="Trello" data-icon="📋" data-url="https://trello.com">
+            <div class="icon">📋</div><div class="name">Trello</div>
+          </div>
+          <div class="catalog-item" data-name="Asana" data-icon="🎯" data-url="https://app.asana.com">
+            <div class="icon">🎯</div><div class="name">Asana</div>
+          </div>
+          <div class="catalog-item" data-name="Monday" data-icon="📅" data-url="https://monday.com">
+            <div class="icon">📅</div><div class="name">Monday</div>
+          </div>
+          <div class="catalog-item" data-name="Todoist" data-icon="✅" data-url="https://app.todoist.com">
+            <div class="icon">✅</div><div class="name">Todoist</div>
+          </div>
+          <div class="catalog-item" data-name="Google Calendar" data-icon="📆" data-url="https://calendar.google.com">
+            <div class="icon">📆</div><div class="name">Calendar</div>
+          </div>
+          <div class="catalog-item" data-name="Google Drive" data-icon="📁" data-url="https://drive.google.com">
+            <div class="icon">📁</div><div class="name">Drive</div>
+          </div>
+          <div class="catalog-item" data-name="Jira" data-icon="🔧" data-url="https://jira.atlassian.com">
+            <div class="icon">🔧</div><div class="name">Jira</div>
+          </div>
+          <div class="catalog-item" data-name="GitHub" data-icon="🐙" data-url="https://github.com">
+            <div class="icon">🐙</div><div class="name">GitHub</div>
+          </div>
+          <div class="catalog-item" data-name="Figma" data-icon="🎨" data-url="https://www.figma.com">
+            <div class="icon">🎨</div><div class="name">Figma</div>
+          </div>
+        </div>
+
+        <div class="catalog-section-label">Videollamadas</div>
+        <div class="catalog-grid">
+          <div class="catalog-item" data-name="Google Meet" data-icon="📹" data-url="https://meet.google.com">
+            <div class="icon">📹</div><div class="name">Meet</div>
+          </div>
+          <div class="catalog-item" data-name="Zoom" data-icon="🎥" data-url="https://zoom.us/wc">
+            <div class="icon">🎥</div><div class="name">Zoom</div>
+          </div>
+          <div class="catalog-item" data-name="Webex" data-icon="📡" data-url="https://web.webex.com">
+            <div class="icon">📡</div><div class="name">Webex</div>
+          </div>
+        </div>
+
+        <div class="section-title">Apps activas</div>
+        <div class="services-list" id="services-list">
+          <div class="empty-msg">No hay apps configuradas</div>
+        </div>
+
+        <div class="add-form">
+          <h3>App personalizada</h3>
+          <div class="form-row">
+            <label>Nombre</label>
+            <input type="text" id="custom-name" placeholder="Mi App" />
+          </div>
+          <div class="form-row">
+            <label>URL</label>
+            <input type="text" id="custom-url" placeholder="https://..." />
+          </div>
+          <div class="form-row">
+            <label>Icono (emoji)</label>
+            <input type="text" id="custom-icon" placeholder="🌐" maxlength="2" />
+          </div>
+          <button class="btn-add" id="btn-add-custom">+ Agregar</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast"></div>
+
+  <!-- Banner de autenticacion Google -->
+  <div id="google-auth-banner" style="display:none">
+    <div id="google-auth-banner-inner">
+      <span style="font-size:20px">🔐</span>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600;color:#e9edef">Google bloquea el login en apps embebidas</div>
+        <div style="font-size:11px;color:#667781;margin-top:2px">Abre una ventana separada para iniciar sesion</div>
+      </div>
+      <button id="google-auth-btn">Iniciar sesion</button>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

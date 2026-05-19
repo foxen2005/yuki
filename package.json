@@ -1,0 +1,47 @@
+{
+  "name": "yuki",
+  "version": "0.2.0",
+  "description": "Multi-app desktop client",
+  "main": "src/main/index.js",
+  "scripts": {
+    "start": "set ELECTRON_RUN_AS_NODE=&&electron .",
+    "start:dev": "set ELECTRON_RUN_AS_NODE=&&electron . --inspect=9229",
+    "build": "electron-builder build --win",
+    "build:dir": "electron-builder build --win --dir"
+  },
+  "build": {
+    "appId": "com.yuki.app",
+    "productName": "Yuki",
+    "copyright": "2025",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**",
+      "icons/**"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "icons/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Yuki"
+    }
+  },
+  "devDependencies": {
+    "electron": "^35.0.0",
+    "electron-builder": "^26.8.1",
+    "jimp": "^0.22.12",
+    "png-to-ico": "^3.0.1"
+  },
+  "dependencies": {}
+}

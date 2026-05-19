@@ -1,0 +1,11 @@
+node_modules/
+dist/
+client_secret_*.json
+yuki-backup-*.json
+*.lnk
+*.vbs
+*.bat
+*.log
+.DS_Store
+Thumbs.db
+*.enc
