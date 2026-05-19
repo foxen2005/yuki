@@ -22,8 +22,8 @@ function registerHandlers({ win, viewManager }) {
   ipcMain.handle('view:reload', (_, id) => {
     viewManager.reload(id)
   })
-  ipcMain.handle('view:resize-all', () => {
-    viewManager.resizeAll()
+  ipcMain.handle('view:resize-all', (_, leftOffset) => {
+    viewManager.resizeAll(leftOffset ?? 64)
   })
   ipcMain.handle('view:devtools', (_, id) => {
     viewManager.openDevTools(id)

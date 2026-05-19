@@ -22,7 +22,7 @@ contextBridge.exposeInMainWorld('yukiAPI', {
   sleepView:   (id)                 => ipcRenderer.invoke('view:sleep', id),
   destroyView: (id)                 => ipcRenderer.invoke('view:destroy', id),
   reloadView:  (id)                 => ipcRenderer.invoke('view:reload', id),
-  resizeViews: ()                   => ipcRenderer.invoke('view:resize-all'),
+  resizeViews: (leftOffset)         => ipcRenderer.invoke('view:resize-all', leftOffset),
   openDevTools:(id)                 => ipcRenderer.invoke('view:devtools', id),
   setAutoSleep:(minutes)            => ipcRenderer.invoke('view:set-auto-sleep', minutes),
 

@@ -426,15 +426,25 @@ function resizeImage(dataUrl, size, callback) {
 }
 
 // ── Settings panel ────────────────────────────────────────────────────────────
+// Las WebContentsViews son ventanas nativas — se superponen sobre el DOM.
+// Al abrir settings, empujamos las vistas hacia la derecha del panel (64+340=404).
+const SETTINGS_WIDTH = 340
+
 function toggleSettings() {
   const isOpen = document.getElementById('settings-overlay').classList.contains('open')
   document.getElementById('settings-overlay').classList.toggle('open')
   document.getElementById('settings-toggle').classList.toggle('open', !isOpen)
-  if (!isOpen) renderServicesList(loadApps())
+  if (!isOpen) {
+    renderServicesList(loadApps())
+    window.yukiAPI.resizeViews(64 + SETTINGS_WIDTH)
+  } else {
+    window.yukiAPI.resizeViews(64)
+  }
 }
 function closeSettings() {
   document.getElementById('settings-overlay').classList.remove('open')
   document.getElementById('settings-toggle').classList.remove('open')
+  window.yukiAPI.resizeViews(64)
 }
 
 // ── Sonido de notificación ────────────────────────────────────────────────────
@@ -523,6 +533,7 @@ function hideGoogleAuthBanner() {
 ;(function initSettings() {
   try {
     document.getElementById('settings-toggle').addEventListener('click', toggleSettings)
+    document.getElementById('settings-close-btn').addEventListener('click', closeSettings)
 
     const volSlider  = document.getElementById('vol-slider')
     const volValue   = document.getElementById('vol-value')

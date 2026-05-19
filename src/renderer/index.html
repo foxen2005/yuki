@@ -44,6 +44,7 @@
       <div class="panel-header">
         <span style="font-size:20px">⚙️</span>
         <h2>Configuracion de Apps</h2>
+        <button id="settings-close-btn" title="Cerrar" style="margin-left:auto;background:none;border:none;color:#667781;font-size:20px;cursor:pointer;padding:4px 6px;border-radius:6px;line-height:1;transition:color 0.15s;" onmouseover="this.style.color='#e9edef'" onmouseout="this.style.color='#667781'">✕</button>
       </div>
 
       <div class="panel-body">
@@ -332,6 +333,36 @@
             <input type="text" id="custom-icon" placeholder="🌐" maxlength="2" />
           </div>
           <button class="btn-add" id="btn-add-custom">+ Agregar</button>
+        </div>
+
+        <!-- Acerca de -->
+        <div class="section-title" style="margin-top:24px">Acerca de Yuki</div>
+        <div class="settings-card" style="gap:0">
+          <div style="display:flex;align-items:center;gap:14px;padding:4px 0 12px">
+            <div style="font-size:36px;line-height:1">🌸</div>
+            <div>
+              <div style="font-size:15px;font-weight:700;color:#e9edef">Yuki</div>
+              <div style="font-size:12px;color:#00a884;font-weight:600">Versión 0.2.0</div>
+              <div style="font-size:11px;color:#667781;margin-top:2px">Multi-app desktop client</div>
+            </div>
+          </div>
+          <div style="border-top:1px solid #2a3942;padding-top:12px;display:flex;flex-direction:column;gap:8px">
+            <div style="font-size:11px;font-weight:700;color:#667781;text-transform:uppercase;letter-spacing:0.6px">Atajos de teclado</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px">
+              <div style="font-size:11px;color:#aebac1"><kbd style="background:#2a3942;border-radius:4px;padding:1px 5px;font-size:10px;color:#e9edef">Ctrl+1…9</kbd> Cambiar app</div>
+              <div style="font-size:11px;color:#aebac1"><kbd style="background:#2a3942;border-radius:4px;padding:1px 5px;font-size:10px;color:#e9edef">F12</kbd> DevTools principal</div>
+              <div style="font-size:11px;color:#aebac1"><kbd style="background:#2a3942;border-radius:4px;padding:1px 5px;font-size:10px;color:#e9edef">Ctrl+Shift+I</kbd> DevTools app</div>
+              <div style="font-size:11px;color:#aebac1"><kbd style="background:#2a3942;border-radius:4px;padding:1px 5px;font-size:10px;color:#e9edef">⚙️ clic</kbd> Este panel</div>
+            </div>
+          </div>
+          <div style="border-top:1px solid #2a3942;margin-top:12px;padding-top:12px;display:flex;flex-direction:column;gap:4px">
+            <div style="font-size:11px;font-weight:700;color:#667781;text-transform:uppercase;letter-spacing:0.6px">Tecnología</div>
+            <div style="font-size:11px;color:#aebac1">Electron 35 · WebContentsView · Node.js 22</div>
+            <div style="font-size:11px;color:#aebac1">contextIsolation · safeStorage PIN</div>
+          </div>
+          <div style="border-top:1px solid #2a3942;margin-top:12px;padding-top:10px;text-align:center">
+            <div style="font-size:10px;color:#667781">© 2025 Digital Fox Studio · github.com/foxen2005/yuki</div>
+          </div>
         </div>
 
       </div>

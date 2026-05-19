@@ -129,8 +129,14 @@ class ViewManager {
     entry.url = url
   }
 
-  resizeAll() {
-    const bounds = this.getViewBounds()
+  resizeAll(leftOffset = 64) {
+    const [w, h] = this.win.getContentSize()
+    const bounds = {
+      x: Math.floor(leftOffset),
+      y: 0,
+      width: Math.max(Math.floor(w - leftOffset), 100),
+      height: Math.max(Math.floor(h), 100),
+    }
     for (const entry of this.views.values()) {
       if (entry.visible) entry.view.setBounds(bounds)
     }
