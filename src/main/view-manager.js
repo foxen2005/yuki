@@ -212,14 +212,6 @@ class ViewManager {
         if (navUrl.includes('accounts.google.com') && !navUrl.includes('ServiceLogin')) {
           this.win.webContents.send('view:needs-google-auth', { id, partition: `persist:${id}` })
         }
-        // Evitar que apps como WhatsApp terminen mostrando Facebook por el flujo OAuth de Meta.
-        // Si la vista navega a facebook.com pero NO es una app de Facebook, abrir en browser
-        // externo y recargar la URL original.
-        const entry = this.views.get(id)
-        if (entry && navUrl.includes('facebook.com') && !entry.url.includes('facebook.com')) {
-          shell.openExternal(navUrl).catch(() => {})
-          wc.loadURL(entry.url).catch(() => {})
-        }
       }
     })
 
@@ -228,7 +220,15 @@ class ViewManager {
     })
 
     wc.setWindowOpenHandler(({ url: openUrl }) => {
-      if (/^https?:/.test(openUrl)) shell.openExternal(openUrl)
+      if (/^https?:/.test(openUrl)) {
+        try {
+          const currentBase = new URL(wc.getURL()).hostname.split('.').slice(-2).join('.')
+          const openBase    = new URL(openUrl).hostname.split('.').slice(-2).join('.')
+          if (openBase !== currentBase) shell.openExternal(openUrl)
+        } catch(e) {
+          shell.openExternal(openUrl)
+        }
+      }
       return { action: 'deny' }
     })
 
