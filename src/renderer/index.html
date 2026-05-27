@@ -12,7 +12,7 @@
     <div id="apps-list"></div>
     <div id="sidebar-bottom">
       <div class="divider"></div>
-      <button class="app-btn settings-btn" id="settings-toggle" title="Configuracion">⚙️</button>
+      <button class="app-btn settings-btn" id="settings-toggle" title="Configuracion" aria-label="Configuración">⚙️</button>
     </div>
   </div>
 
@@ -44,7 +44,7 @@
       <div class="panel-header">
         <span style="font-size:20px">⚙️</span>
         <h2>Configuracion de Apps</h2>
-        <button id="settings-close-btn" title="Cerrar" style="margin-left:auto;background:none;border:none;color:#667781;font-size:20px;cursor:pointer;padding:4px 6px;border-radius:6px;line-height:1;transition:color 0.15s;" onmouseover="this.style.color='#e9edef'" onmouseout="this.style.color='#667781'">✕</button>
+        <button id="settings-close-btn" title="Cerrar" aria-label="Cerrar" style="margin-left:auto;background:none;border:none;color:#667781;font-size:20px;cursor:pointer;padding:4px 6px;border-radius:6px;line-height:1;transition:color 0.15s;" onmouseover="this.style.color='#e9edef'" onmouseout="this.style.color='#667781'">✕</button>
       </div>
 
       <div class="panel-body">
@@ -215,100 +215,100 @@
 
         <div class="catalog-section-label">Mensajería</div>
         <div class="catalog-grid" id="catalog-grid">
-          <div class="catalog-item" data-name="WhatsApp" data-icon-key="whatsapp" data-url="https://web.whatsapp.com">
+          <div class="catalog-item" role="button" tabindex="0" data-name="WhatsApp" data-icon-key="whatsapp" data-url="https://web.whatsapp.com">
             <div class="icon" id="cat-icon-whatsapp">💬</div><div class="name">WhatsApp</div>
           </div>
-          <div class="catalog-item" data-name="Telegram" data-icon="✈️" data-url="https://web.telegram.org/k/">
+          <div class="catalog-item" role="button" tabindex="0" data-name="Telegram" data-icon="✈️" data-url="https://web.telegram.org/k/">
             <div class="icon">✈️</div><div class="name">Telegram</div>
           </div>
-          <div class="catalog-item" data-name="Discord" data-icon="🎮" data-url="https://discord.com/app">
+          <div class="catalog-item" role="button" tabindex="0" data-name="Discord" data-icon="🎮" data-url="https://discord.com/app">
             <div class="icon">🎮</div><div class="name">Discord</div>
           </div>
-          <div class="catalog-item" data-name="Slack" data-icon="🔷" data-url="https://app.slack.com">
+          <div class="catalog-item" role="button" tabindex="0" data-name="Slack" data-icon="🔷" data-url="https://app.slack.com">
             <div class="icon">🔷</div><div class="name">Slack</div>
           </div>
-          <div class="catalog-item" data-name="Microsoft Teams" data-icon="🟦" data-url="https://teams.microsoft.com">
+          <div class="catalog-item" role="button" tabindex="0" data-name="Microsoft Teams" data-icon="🟦" data-url="https://teams.microsoft.com">
             <div class="icon">🟦</div><div class="name">Teams</div>
           </div>
-          <div class="catalog-item" data-name="Signal" data-icon="🔒" data-url="https://app.signal.org">
+          <div class="catalog-item" role="button" tabindex="0" data-name="Signal" data-icon="🔒" data-url="https://app.signal.org">
             <div class="icon">🔒</div><div class="name">Signal</div>
           </div>
-          <div class="catalog-item" data-name="Skype" data-icon="🔵" data-url="https://web.skype.com">
+          <div class="catalog-item" role="button" tabindex="0" data-name="Skype" data-icon="🔵" data-url="https://web.skype.com">
             <div class="icon">🔵</div><div class="name">Skype</div>
           </div>
-          <div class="catalog-item" data-name="Messenger" data-icon="💙" data-url="https://www.messenger.com">
+          <div class="catalog-item" role="button" tabindex="0" data-name="Messenger" data-icon="💙" data-url="https://www.messenger.com">
             <div class="icon">💙</div><div class="name">Messenger</div>
           </div>
-          <div class="catalog-item" data-name="Instagram" data-icon="📸" data-url="https://www.instagram.com/direct/inbox/">
+          <div class="catalog-item" role="button" tabindex="0" data-name="Instagram" data-icon="📸" data-url="https://www.instagram.com/direct/inbox/">
             <div class="icon">📸</div><div class="name">Instagram</div>
           </div>
-          <div class="catalog-item" data-name="X / Twitter" data-icon="🐦" data-url="https://x.com/messages">
+          <div class="catalog-item" role="button" tabindex="0" data-name="X / Twitter" data-icon="🐦" data-url="https://x.com/messages">
             <div class="icon">🐦</div><div class="name">X DMs</div>
           </div>
-          <div class="catalog-item" data-name="LinkedIn" data-icon="💼" data-url="https://www.linkedin.com/messaging/">
+          <div class="catalog-item" role="button" tabindex="0" data-name="LinkedIn" data-icon="💼" data-url="https://www.linkedin.com/messaging/">
             <div class="icon">💼</div><div class="name">LinkedIn</div>
           </div>
         </div>
 
         <div class="catalog-section-label">Email</div>
         <div class="catalog-grid">
-          <div class="catalog-item" data-name="Gmail" data-icon-key="gmail" data-url="https://mail.google.com/mail/u/0/">
+          <div class="catalog-item" role="button" tabindex="0" data-name="Gmail" data-icon-key="gmail" data-url="https://mail.google.com/mail/u/0/">
             <div class="icon" id="cat-icon-gmail">📧</div><div class="name">Gmail</div>
           </div>
-          <div class="catalog-item" data-name="Outlook" data-icon="📨" data-url="https://outlook.live.com/mail/">
+          <div class="catalog-item" role="button" tabindex="0" data-name="Outlook" data-icon="📨" data-url="https://outlook.live.com/mail/">
             <div class="icon">📨</div><div class="name">Outlook</div>
           </div>
-          <div class="catalog-item" data-name="ProtonMail" data-icon="🛡️" data-url="https://mail.proton.me">
+          <div class="catalog-item" role="button" tabindex="0" data-name="ProtonMail" data-icon="🛡️" data-url="https://mail.proton.me">
             <div class="icon">🛡️</div><div class="name">ProtonMail</div>
           </div>
-          <div class="catalog-item" data-name="Yahoo Mail" data-icon="📬" data-url="https://mail.yahoo.com">
+          <div class="catalog-item" role="button" tabindex="0" data-name="Yahoo Mail" data-icon="📬" data-url="https://mail.yahoo.com">
             <div class="icon">📬</div><div class="name">Yahoo Mail</div>
           </div>
         </div>
 
         <div class="catalog-section-label">Productividad</div>
         <div class="catalog-grid">
-          <div class="catalog-item" data-name="Notion" data-icon="📝" data-url="https://www.notion.so">
+          <div class="catalog-item" role="button" tabindex="0" data-name="Notion" data-icon="📝" data-url="https://www.notion.so">
             <div class="icon">📝</div><div class="name">Notion</div>
           </div>
-          <div class="catalog-item" data-name="Trello" data-icon="📋" data-url="https://trello.com">
+          <div class="catalog-item" role="button" tabindex="0" data-name="Trello" data-icon="📋" data-url="https://trello.com">
             <div class="icon">📋</div><div class="name">Trello</div>
           </div>
-          <div class="catalog-item" data-name="Asana" data-icon="🎯" data-url="https://app.asana.com">
+          <div class="catalog-item" role="button" tabindex="0" data-name="Asana" data-icon="🎯" data-url="https://app.asana.com">
             <div class="icon">🎯</div><div class="name">Asana</div>
           </div>
-          <div class="catalog-item" data-name="Monday" data-icon="📅" data-url="https://monday.com">
+          <div class="catalog-item" role="button" tabindex="0" data-name="Monday" data-icon="📅" data-url="https://monday.com">
             <div class="icon">📅</div><div class="name">Monday</div>
           </div>
-          <div class="catalog-item" data-name="Todoist" data-icon="✅" data-url="https://app.todoist.com">
+          <div class="catalog-item" role="button" tabindex="0" data-name="Todoist" data-icon="✅" data-url="https://app.todoist.com">
             <div class="icon">✅</div><div class="name">Todoist</div>
           </div>
-          <div class="catalog-item" data-name="Google Calendar" data-icon="📆" data-url="https://calendar.google.com">
+          <div class="catalog-item" role="button" tabindex="0" data-name="Google Calendar" data-icon="📆" data-url="https://calendar.google.com">
             <div class="icon">📆</div><div class="name">Calendar</div>
           </div>
-          <div class="catalog-item" data-name="Google Drive" data-icon="📁" data-url="https://drive.google.com">
+          <div class="catalog-item" role="button" tabindex="0" data-name="Google Drive" data-icon="📁" data-url="https://drive.google.com">
             <div class="icon">📁</div><div class="name">Drive</div>
           </div>
-          <div class="catalog-item" data-name="Jira" data-icon="🔧" data-url="https://jira.atlassian.com">
+          <div class="catalog-item" role="button" tabindex="0" data-name="Jira" data-icon="🔧" data-url="https://jira.atlassian.com">
             <div class="icon">🔧</div><div class="name">Jira</div>
           </div>
-          <div class="catalog-item" data-name="GitHub" data-icon="🐙" data-url="https://github.com">
+          <div class="catalog-item" role="button" tabindex="0" data-name="GitHub" data-icon="🐙" data-url="https://github.com">
             <div class="icon">🐙</div><div class="name">GitHub</div>
           </div>
-          <div class="catalog-item" data-name="Figma" data-icon="🎨" data-url="https://www.figma.com">
+          <div class="catalog-item" role="button" tabindex="0" data-name="Figma" data-icon="🎨" data-url="https://www.figma.com">
             <div class="icon">🎨</div><div class="name">Figma</div>
           </div>
         </div>
 
         <div class="catalog-section-label">Videollamadas</div>
         <div class="catalog-grid">
-          <div class="catalog-item" data-name="Google Meet" data-icon="📹" data-url="https://meet.google.com">
+          <div class="catalog-item" role="button" tabindex="0" data-name="Google Meet" data-icon="📹" data-url="https://meet.google.com">
             <div class="icon">📹</div><div class="name">Meet</div>
           </div>
-          <div class="catalog-item" data-name="Zoom" data-icon="🎥" data-url="https://zoom.us/wc">
+          <div class="catalog-item" role="button" tabindex="0" data-name="Zoom" data-icon="🎥" data-url="https://zoom.us/wc">
             <div class="icon">🎥</div><div class="name">Zoom</div>
           </div>
-          <div class="catalog-item" data-name="Webex" data-icon="📡" data-url="https://web.webex.com">
+          <div class="catalog-item" role="button" tabindex="0" data-name="Webex" data-icon="📡" data-url="https://web.webex.com">
             <div class="icon">📡</div><div class="name">Webex</div>
           </div>
         </div>
@@ -321,15 +321,15 @@
         <div class="add-form">
           <h3>App personalizada</h3>
           <div class="form-row">
-            <label>Nombre</label>
+            <label for="custom-name">Nombre</label>
             <input type="text" id="custom-name" placeholder="Mi App" />
           </div>
           <div class="form-row">
-            <label>URL</label>
+            <label for="custom-url">URL</label>
             <input type="text" id="custom-url" placeholder="https://..." />
           </div>
           <div class="form-row">
-            <label>Icono (emoji)</label>
+            <label for="custom-icon">Icono (emoji)</label>
             <input type="text" id="custom-icon" placeholder="🌐" maxlength="2" />
           </div>
           <button class="btn-add" id="btn-add-custom">+ Agregar</button>

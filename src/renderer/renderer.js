@@ -73,7 +73,7 @@ function showToast(msg, duration = 2000) {
 
 // ── Render icon ───────────────────────────────────────────────────────────────
 function renderIconHTML(icon) {
-  if (icon && icon.startsWith('data:image')) return `<img src="${icon}" alt="icon" />`
+  if (icon && icon.startsWith('data:image')) return `<img src="${icon}" alt="" aria-hidden="true" />`
   return icon || '🌐'
 }
 
@@ -167,7 +167,7 @@ function render() {
     item.className = 'app-item'
     item.innerHTML = `
       <button class="app-btn ${activeId === app.id ? 'active' : ''}"
-              data-id="${app.id}" title="${app.name}">
+              data-id="${app.id}" title="${app.name}" aria-label="${app.name}">
         ${renderIconHTML(app.icon)}
       </button>
       <span class="badge" id="badge-${app.id}"></span>
@@ -233,7 +233,7 @@ function renderServicesList(apps) {
     card.className = 'service-card'
     card.innerHTML = `
       <div class="svc-top-row">
-        <div class="svc-icon-wrap" title="Click para cambiar imagen">
+        <div class="svc-icon-wrap" title="Click para cambiar imagen" role="button" tabindex="0" aria-label="Cambiar imagen">
           ${renderIconHTML(app.icon)}
         </div>
         <div class="service-info">
@@ -248,30 +248,46 @@ function renderServicesList(apps) {
         <div class="sleep-toggle-wrap" title="Sleep: hiberna esta app cuando no está activa para ahorrar RAM">
           <span class="sleep-label">💤 Sleep</span>
           <label class="toggle">
-            <input type="checkbox" class="sleep-checkbox" ${app.sleep ? 'checked' : ''} />
+            <input type="checkbox" class="sleep-checkbox" aria-label="Habilitar hibernación para ${app.name}" ${app.sleep ? 'checked' : ''} />
             <span class="toggle-slider"></span>
           </label>
         </div>
-        <button class="icon-btn move-up" title="Subir" ${i === 0 ? 'disabled' : ''}>↑</button>
-        <button class="icon-btn move-down" title="Bajar" ${i === apps.length - 1 ? 'disabled' : ''}>↓</button>
-        <button class="icon-btn reload-btn" title="Recargar">↺</button>
-        <button class="icon-btn clear-session-btn" title="Limpiar caché y sesión (reinicia el login)">🧹</button>
-        ${app.url.includes('google.com') ? `<button class="icon-btn google-login-btn" title="Iniciar sesion Google">🔑</button>` : ''}
-        <button class="icon-btn danger" title="Eliminar">🗑</button>
+        <button class="icon-btn move-up" title="Subir" aria-label="Subir app" ${i === 0 ? 'disabled' : ''}>↑</button>
+        <button class="icon-btn move-down" title="Bajar" aria-label="Bajar app" ${i === apps.length - 1 ? 'disabled' : ''}>↓</button>
+        <button class="icon-btn reload-btn" title="Recargar" aria-label="Recargar app">↺</button>
+        <button class="icon-btn clear-session-btn" title="Limpiar caché y sesión (reinicia el login)" aria-label="Limpiar caché y sesión">🧹</button>
+        ${app.url.includes('google.com') ? `<button class="icon-btn google-login-btn" title="Iniciar sesion Google" aria-label="Iniciar sesión en Google">🔑</button>` : ''}
+        <button class="icon-btn danger" title="Eliminar" aria-label="Eliminar app">🗑</button>
       </div>
     `
 
     // Cambiar icono
-    card.querySelector('.svc-icon-wrap').addEventListener('click', () => openIconPicker(app.id))
+    const iconWrap = card.querySelector('.svc-icon-wrap')
+    iconWrap.addEventListener('click', () => openIconPicker(app.id))
+    iconWrap.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        openIconPicker(app.id)
+      }
+    })
 
     // Renombrar inline
     const nameSpan  = card.querySelector('.svc-name')
     const nameInput = card.querySelector('.svc-name-input')
-    nameSpan.addEventListener('click', (e) => {
+    nameSpan.setAttribute('role', 'button')
+    nameSpan.setAttribute('tabindex', '0')
+    const triggerRename = (e) => {
       e.stopPropagation()
       nameSpan.style.display = 'none'
       nameInput.style.display = 'block'
       setTimeout(() => { nameInput.focus(); nameInput.select() }, 0)
+    }
+    nameSpan.addEventListener('click', triggerRename)
+    nameSpan.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        triggerRename(e)
+      }
     })
     let renaming = false
     const commitRename = () => {
@@ -655,6 +671,14 @@ function hideGoogleAuthBanner() {
         const item = e.target.closest('.catalog-item')
         if (!item) return
         addFromCatalog(item.dataset.name, item.dataset.icon, item.dataset.url)
+      })
+      grid.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          const item = e.target.closest('.catalog-item')
+          if (!item) return
+          e.preventDefault()
+          addFromCatalog(item.dataset.name, item.dataset.icon, item.dataset.url)
+        }
       })
     })
 
