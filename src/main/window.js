@@ -18,7 +18,14 @@ function createWindow() {
     minHeight: 600,
     title: 'Yuki',
     icon: fs.existsSync(iconPath) ? iconPath : iconPng,
-    backgroundColor: '#111b21',
+    backgroundColor: '#00000000',
+    titleBarStyle: 'hidden',
+    titleBarOverlay: {
+      color: '#00000000',
+      symbolColor: '#ffffff',
+      height: 32
+    },
+    backgroundMaterial: 'acrylic',
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,

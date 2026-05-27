@@ -74,7 +74,8 @@ function showToast(msg, duration = 2000) {
 // ── Render icon ───────────────────────────────────────────────────────────────
 function renderIconHTML(icon) {
   if (icon && icon.startsWith('data:image')) return `<img src="${icon}" alt="" aria-hidden="true" />`
-  return icon || '🌐'
+  if (icon && icon.startsWith('lucide:')) return `<i data-lucide="${icon.split(':')[1]}" class="icon-lucide"></i>`;
+  return icon || '<i data-lucide="globe" class="icon-lucide"></i>'
 }
 
 // ── Loading overlay ───────────────────────────────────────────────────────────
@@ -111,6 +112,14 @@ function sleepInactive() {
 
 // ── Navegación ────────────────────────────────────────────────────────────────
 function switchTo(id) {
+  const mainContainer = document.getElementById('main-container');
+  mainContainer.style.opacity = '0';
+  mainContainer.style.transform = 'scale(0.98)';
+  setTimeout(() => {
+    mainContainer.style.transition = 'var(--transition)';
+    mainContainer.style.opacity = '1';
+    mainContainer.style.transform = 'scale(1)';
+  }, 50);
   const apps  = loadApps()
   const app   = apps.find(a => a.id === id)
   if (!app) return
@@ -246,18 +255,18 @@ function renderServicesList(apps) {
       </div>
       <div class="service-actions">
         <div class="sleep-toggle-wrap" title="Sleep: hiberna esta app cuando no está activa para ahorrar RAM">
-          <span class="sleep-label">💤 Sleep</span>
+          <span class="sleep-label"><i data-lucide="moon" class="icon-lucide"></i> Sleep</span>
           <label class="toggle">
             <input type="checkbox" class="sleep-checkbox" aria-label="Habilitar hibernación para ${app.name}" ${app.sleep ? 'checked' : ''} />
             <span class="toggle-slider"></span>
           </label>
         </div>
-        <button class="icon-btn move-up" title="Subir" aria-label="Subir app" ${i === 0 ? 'disabled' : ''}>↑</button>
-        <button class="icon-btn move-down" title="Bajar" aria-label="Bajar app" ${i === apps.length - 1 ? 'disabled' : ''}>↓</button>
-        <button class="icon-btn reload-btn" title="Recargar" aria-label="Recargar app">↺</button>
-        <button class="icon-btn clear-session-btn" title="Limpiar caché y sesión (reinicia el login)" aria-label="Limpiar caché y sesión">🧹</button>
-        ${app.url.includes('google.com') ? `<button class="icon-btn google-login-btn" title="Iniciar sesion Google" aria-label="Iniciar sesión en Google">🔑</button>` : ''}
-        <button class="icon-btn danger" title="Eliminar" aria-label="Eliminar app">🗑</button>
+        <button class="icon-btn move-up" title="Subir" aria-label="Subir app" ${i === 0 ? 'disabled' : ''}><i data-lucide="chevron-up" class="icon-lucide"></i></button>
+        <button class="icon-btn move-down" title="Bajar" aria-label="Bajar app" ${i === apps.length - 1 ? 'disabled' : ''}><i data-lucide="chevron-down" class="icon-lucide"></i></button>
+        <button class="icon-btn reload-btn" title="Recargar" aria-label="Recargar app"><i data-lucide="refresh-cw" class="icon-lucide"></i></button>
+        <button class="icon-btn clear-session-btn" title="Limpiar caché y sesión (reinicia el login)" aria-label="Limpiar caché y sesión"><i data-lucide="eraser" class="icon-lucide"></i></button>
+        ${app.url.includes('google.com') ? `<button class="icon-btn google-login-btn" title="Iniciar sesion Google" aria-label="Iniciar sesión en Google"><i data-lucide="key" class="icon-lucide"></i></button>` : ''}
+        <button class="icon-btn danger" title="Eliminar" aria-label="Eliminar app"><i data-lucide="trash-2" class="icon-lucide"></i></button>
       </div>
     `
 
@@ -335,7 +344,7 @@ function renderServicesList(apps) {
         if (!target.sleep) {
           // Si se desactiva sleep, dejar que la vista se despierte sola al visitarla
         }
-        showToast(target.sleep ? `💤 Sleep activado en ${app.name}` : `▶ Sleep desactivado en ${app.name}`)
+        showToast(target.sleep ? `<i data-lucide="moon" class="icon-lucide"></i> Sleep activado en ${app.name}` : `▶ Sleep desactivado en ${app.name}`)
       }
     })
 
@@ -528,7 +537,7 @@ function updateMemoryUI(report) {
       <span style="font-size:14px">${icon}</span>
       <span class="memory-app-name">${name}</span>
       <span class="memory-mb">${privateMB} MB</span>
-      <button class="icon-btn" onclick="window.yukiAPI.sleepView('${id}')" title="Liberar memoria">💤</button>
+      <button class="icon-btn" onclick="window.yukiAPI.sleepView('${id}')" title="Liberar memoria"><i data-lucide="moon" class="icon-lucide"></i></button>
     </div>`
   }).join('')
 }
@@ -581,7 +590,7 @@ function hideGoogleAuthBanner() {
     })
     if (dndToggle) dndToggle.addEventListener('change', () => {
       saveSettings({ dnd: dndToggle.checked })
-      showToast(dndToggle.checked ? '🔕 No molestar activado' : '🔔 Notificaciones activadas')
+      showToast(dndToggle.checked ? 'No molestar No molestar activado' : 'Notificaciones Notificaciones activadas')
     })
     if (soundSelect) soundSelect.addEventListener('change', () => {
       const val = soundSelect.value
@@ -639,7 +648,7 @@ function hideGoogleAuthBanner() {
     if (lockToggle) lockToggle.checked = !!lockCfg.enabled
 
     window.yukiAPI.hasPin().then(has => {
-      if (pinStatus) pinStatus.textContent = has ? 'PIN configurado ✓' : 'Sin PIN configurado'
+      if (pinStatus) pinStatus.textContent = has ? 'PIN configurado configurado' : 'Sin PIN configurado'
     })
 
     if (lockToggle) lockToggle.addEventListener('change', () => {
@@ -651,7 +660,7 @@ function hideGoogleAuthBanner() {
       const res = await window.yukiAPI.savePin(val)
       if (res.ok) {
         pinSetupInp.value = ''
-        if (pinStatus) pinStatus.textContent = 'PIN configurado ✓'
+        if (pinStatus) pinStatus.textContent = 'PIN configurado configurado'
         showToast('PIN guardado')
       }
     })
@@ -892,3 +901,14 @@ async function init() {
 }
 
 init().catch(e => { console.error('[Yuki] init error:', e); render() })
+(function() {
+  const observer = new MutationObserver(() => {
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+  window.addEventListener('load', () => {
+    if (window.lucide) window.lucide.createIcons();
+  });
+})();

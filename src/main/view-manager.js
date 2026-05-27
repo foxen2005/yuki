@@ -15,14 +15,15 @@ class ViewManager {
     win._viewManager = this
   }
 
-  getViewBounds() {
+    getViewBounds() {
     const [w, h] = this.win.getContentSize()
     return {
-      x: 64,
-      y: 0,
-      width: Math.max(Math.floor(w - 64), 100),
-      height: Math.max(Math.floor(h), 100),
+      x: 72,
+      y: 40,
+      width: Math.max(Math.floor(w - 72 - 12), 100),
+      height: Math.max(Math.floor(h - 40 - 12), 100),
     }
+  }
   }
 
   create(id, url, partition) {
@@ -129,13 +130,14 @@ class ViewManager {
     entry.url = url
   }
 
-  resizeAll(leftOffset = 64) {
+  resizeAll(leftOffset = 72) {
     const [w, h] = this.win.getContentSize()
     const bounds = {
       x: Math.floor(leftOffset),
-      y: 0,
-      width: Math.max(Math.floor(w - leftOffset), 100),
-      height: Math.max(Math.floor(h), 100),
+      y: 40,
+      y: 40,
+      width: Math.max(Math.floor(w - leftOffset - 12), 100),
+      height: Math.max(Math.floor(h - 40 - 12), 100),
     }
     for (const entry of this.views.values()) {
       if (entry.visible) entry.view.setBounds(bounds)
