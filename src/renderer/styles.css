@@ -355,3 +355,11 @@ body {
   border-radius: 6px; padding: 4px 8px; font-size: 12px; cursor: pointer; outline: none;
 }
 #auto-sleep-select:focus { border-color: #00a884; }
+
+/* Focus states for accessibility */
+.catalog-item:focus-visible,
+.svc-icon-wrap:focus-visible,
+.svc-name:focus-visible {
+  outline: 2px solid #00a884;
+  outline-offset: 2px;
+}
