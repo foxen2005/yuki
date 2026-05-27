@@ -4,15 +4,17 @@
   <meta charset="UTF-8" />
   <title>Yuki</title>
   <link rel="stylesheet" href="styles.css" />
+  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
+  <div class="titlebar-drag"></div>
 
   <!-- Sidebar -->
   <div id="sidebar">
     <div id="apps-list"></div>
     <div id="sidebar-bottom">
       <div class="divider"></div>
-      <button class="app-btn settings-btn" id="settings-toggle" title="Configuracion" aria-label="Configuración">⚙️</button>
+      <button class="app-btn settings-btn" id="settings-toggle" title="Configuracion" aria-label="Configuración"><i data-lucide="settings" class="icon-lucide"></i></button>
     </div>
   </div>
 
@@ -42,9 +44,9 @@
     <div id="settings-panel">
 
       <div class="panel-header">
-        <span style="font-size:20px">⚙️</span>
+        <span style="font-size:20px"><i data-lucide="settings" class="icon-lucide"></i></span>
         <h2>Configuracion de Apps</h2>
-        <button id="settings-close-btn" title="Cerrar" aria-label="Cerrar" style="margin-left:auto;background:none;border:none;color:#667781;font-size:20px;cursor:pointer;padding:4px 6px;border-radius:6px;line-height:1;transition:color 0.15s;" onmouseover="this.style.color='#e9edef'" onmouseout="this.style.color='#667781'">✕</button>
+        <button id="settings-close-btn" class="icon-btn" title="Cerrar" aria-label="Cerrar"  ><i data-lucide="x" class="icon-lucide"></i></button>
       </div>
 
       <div class="panel-body">
@@ -132,7 +134,7 @@
             </div>
             <div class="settings-control" style="gap:6px">
               <input type="password" id="pin-setup-input" placeholder="mín. 4 chars" maxlength="8"
-                style="width:110px;background:#111b21;border:1px solid #374045;border-radius:6px;color:#e9edef;padding:5px 8px;outline:none;font-size:13px;user-select:text;-webkit-user-select:text;" />
+                style="width:110px;background:var(--bg-sidebar);border:1px solid var(--border-color);border-radius:6px;color:#e9edef;padding:5px 8px;outline:none;font-size:13px;user-select:text;-webkit-user-select:text;" />
               <button class="backup-btn" id="pin-save-btn">Guardar</button>
             </div>
           </div>
@@ -215,101 +217,101 @@
 
         <div class="catalog-section-label">Mensajería</div>
         <div class="catalog-grid" id="catalog-grid">
-          <div class="catalog-item" role="button" tabindex="0" data-name="WhatsApp" data-icon-key="whatsapp" data-url="https://web.whatsapp.com">
-            <div class="icon" id="cat-icon-whatsapp">💬</div><div class="name">WhatsApp</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="WhatsApp" data-icon="lucide:message-circle" data-url="https://web.whatsapp.com">
+            <div class="icon" id="cat-icon-whatsapp"><i data-lucide="message-circle" class="icon-lucide"></i></div><div class="name">WhatsApp</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Telegram" data-icon="✈️" data-url="https://web.telegram.org/k/">
-            <div class="icon">✈️</div><div class="name">Telegram</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Telegram" data-icon="lucide:send" data-url="https://web.telegram.org/k/">
+            <div class="icon"><i data-lucide="send" class="icon-lucide"></i></div><div class="name">Telegram</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Discord" data-icon="🎮" data-url="https://discord.com/app">
-            <div class="icon">🎮</div><div class="name">Discord</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Discord" data-icon="lucide:gamepad-2" data-url="https://discord.com/app">
+            <div class="icon"><i data-lucide="gamepad-2" class="icon-lucide"></i></div><div class="name">Discord</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Slack" data-icon="🔷" data-url="https://app.slack.com">
-            <div class="icon">🔷</div><div class="name">Slack</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Slack" data-icon="lucide:message-square" data-url="https://app.slack.com">
+            <div class="icon"><i data-lucide="message-square" class="icon-lucide"></i></div><div class="name">Slack</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Microsoft Teams" data-icon="🟦" data-url="https://teams.microsoft.com">
-            <div class="icon">🟦</div><div class="name">Teams</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Microsoft Teams" data-icon="lucide:users" data-url="https://teams.microsoft.com">
+            <div class="icon"><i data-lucide="users" class="icon-lucide"></i></div><div class="name">Teams</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Signal" data-icon="🔒" data-url="https://app.signal.org">
-            <div class="icon">🔒</div><div class="name">Signal</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Signal" data-icon="lucide:shield" data-url="https://app.signal.org">
+            <div class="icon"><i data-lucide="shield" class="icon-lucide"></i></div><div class="name">Signal</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Skype" data-icon="🔵" data-url="https://web.skype.com">
-            <div class="icon">🔵</div><div class="name">Skype</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Skype" data-icon="lucide:phone-call" data-url="https://web.skype.com">
+            <div class="icon"><i data-lucide="phone-call" class="icon-lucide"></i></div><div class="name">Skype</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Messenger" data-icon="💙" data-url="https://www.messenger.com">
-            <div class="icon">💙</div><div class="name">Messenger</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Messenger" data-icon="lucide:facebook" data-url="https://www.messenger.com">
+            <div class="icon"><i data-lucide="facebook" class="icon-lucide"></i></div><div class="name">Messenger</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Instagram" data-icon="📸" data-url="https://www.instagram.com/direct/inbox/">
-            <div class="icon">📸</div><div class="name">Instagram</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Instagram" data-icon="lucide:instagram" data-url="https://www.instagram.com/direct/inbox/">
+            <div class="icon"><i data-lucide="instagram" class="icon-lucide"></i></div><div class="name">Instagram</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="X / Twitter" data-icon="🐦" data-url="https://x.com/messages">
-            <div class="icon">🐦</div><div class="name">X DMs</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="X / Twitter" data-icon="lucide:twitter" data-url="https://x.com/messages">
+            <div class="icon"><i data-lucide="twitter" class="icon-lucide"></i></div><div class="name">X DMs</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="LinkedIn" data-icon="💼" data-url="https://www.linkedin.com/messaging/">
-            <div class="icon">💼</div><div class="name">LinkedIn</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="LinkedIn" data-icon="lucide:linkedin" data-url="https://www.linkedin.com/messaging/">
+            <div class="icon"><i data-lucide="linkedin" class="icon-lucide"></i></div><div class="name">LinkedIn</div>
           </div>
         </div>
 
         <div class="catalog-section-label">Email</div>
         <div class="catalog-grid">
-          <div class="catalog-item" role="button" tabindex="0" data-name="Gmail" data-icon-key="gmail" data-url="https://mail.google.com/mail/u/0/">
-            <div class="icon" id="cat-icon-gmail">📧</div><div class="name">Gmail</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Gmail" data-icon="lucide:mail" data-url="https://mail.google.com/mail/u/0/">
+            <div class="icon" id="cat-icon-gmail"><i data-lucide="mail" class="icon-lucide"></i></div><div class="name">Gmail</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Outlook" data-icon="📨" data-url="https://outlook.live.com/mail/">
-            <div class="icon">📨</div><div class="name">Outlook</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Outlook" data-icon="lucide:mail" data-url="https://outlook.live.com/mail/">
+            <div class="icon"><i data-lucide="mail" class="icon-lucide"></i></div><div class="name">Outlook</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="ProtonMail" data-icon="🛡️" data-url="https://mail.proton.me">
-            <div class="icon">🛡️</div><div class="name">ProtonMail</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="ProtonMail" data-icon="lucide:lock" data-url="https://mail.proton.me">
+            <div class="icon"><i data-lucide="lock" class="icon-lucide"></i></div><div class="name">ProtonMail</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Yahoo Mail" data-icon="📬" data-url="https://mail.yahoo.com">
-            <div class="icon">📬</div><div class="name">Yahoo Mail</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Yahoo Mail" data-icon="lucide:inbox" data-url="https://mail.yahoo.com">
+            <div class="icon"><i data-lucide="inbox" class="icon-lucide"></i></div><div class="name">Yahoo Mail</div>
           </div>
         </div>
 
         <div class="catalog-section-label">Productividad</div>
         <div class="catalog-grid">
-          <div class="catalog-item" role="button" tabindex="0" data-name="Notion" data-icon="📝" data-url="https://www.notion.so">
-            <div class="icon">📝</div><div class="name">Notion</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Notion" data-icon="lucide:book-open" data-url="https://www.notion.so">
+            <div class="icon"><i data-lucide="book-open" class="icon-lucide"></i></div><div class="name">Notion</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Trello" data-icon="📋" data-url="https://trello.com">
-            <div class="icon">📋</div><div class="name">Trello</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Trello" data-icon="lucide:clipboard-list" data-url="https://trello.com">
+            <div class="icon"><i data-lucide="clipboard-list" class="icon-lucide"></i></div><div class="name">Trello</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Asana" data-icon="🎯" data-url="https://app.asana.com">
-            <div class="icon">🎯</div><div class="name">Asana</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Asana" data-icon="lucide:target" data-url="https://app.asana.com">
+            <div class="icon"><i data-lucide="target" class="icon-lucide"></i></div><div class="name">Asana</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Monday" data-icon="📅" data-url="https://monday.com">
-            <div class="icon">📅</div><div class="name">Monday</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Monday" data-icon="lucide:calendar-days" data-url="https://monday.com">
+            <div class="icon"><i data-lucide="calendar-days" class="icon-lucide"></i></div><div class="name">Monday</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Todoist" data-icon="✅" data-url="https://app.todoist.com">
-            <div class="icon">✅</div><div class="name">Todoist</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Todoist" data-icon="lucide:check-circle" data-url="https://app.todoist.com">
+            <div class="icon"><i data-lucide="check-circle" class="icon-lucide"></i></div><div class="name">Todoist</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Google Calendar" data-icon="📆" data-url="https://calendar.google.com">
-            <div class="icon">📆</div><div class="name">Calendar</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Google Calendar" data-icon="lucide:calendar" data-url="https://calendar.google.com">
+            <div class="icon"><i data-lucide="calendar" class="icon-lucide"></i></div><div class="name">Calendar</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Google Drive" data-icon="📁" data-url="https://drive.google.com">
-            <div class="icon">📁</div><div class="name">Drive</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Google Drive" data-icon="lucide:folder" data-url="https://drive.google.com">
+            <div class="icon"><i data-lucide="folder" class="icon-lucide"></i></div><div class="name">Drive</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Jira" data-icon="🔧" data-url="https://jira.atlassian.com">
-            <div class="icon">🔧</div><div class="name">Jira</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Jira" data-icon="lucide:wrench" data-url="https://jira.atlassian.com">
+            <div class="icon"><i data-lucide="wrench" class="icon-lucide"></i></div><div class="name">Jira</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="GitHub" data-icon="🐙" data-url="https://github.com">
-            <div class="icon">🐙</div><div class="name">GitHub</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="GitHub" data-icon="lucide:github" data-url="https://github.com">
+            <div class="icon"><i data-lucide="github" class="icon-lucide"></i></div><div class="name">GitHub</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Figma" data-icon="🎨" data-url="https://www.figma.com">
-            <div class="icon">🎨</div><div class="name">Figma</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Figma" data-icon="lucide:palette" data-url="https://www.figma.com">
+            <div class="icon"><i data-lucide="palette" class="icon-lucide"></i></div><div class="name">Figma</div>
           </div>
         </div>
 
         <div class="catalog-section-label">Videollamadas</div>
         <div class="catalog-grid">
-          <div class="catalog-item" role="button" tabindex="0" data-name="Google Meet" data-icon="📹" data-url="https://meet.google.com">
-            <div class="icon">📹</div><div class="name">Meet</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Google Meet" data-icon="lucide:video" data-url="https://meet.google.com">
+            <div class="icon"><i data-lucide="video" class="icon-lucide"></i></div><div class="name">Meet</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Zoom" data-icon="🎥" data-url="https://zoom.us/wc">
-            <div class="icon">🎥</div><div class="name">Zoom</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Zoom" data-icon="lucide:camera" data-url="https://zoom.us/wc">
+            <div class="icon"><i data-lucide="camera" class="icon-lucide"></i></div><div class="name">Zoom</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Webex" data-icon="📡" data-url="https://web.webex.com">
-            <div class="icon">📡</div><div class="name">Webex</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Webex" data-icon="lucide:radio" data-url="https://web.webex.com">
+            <div class="icon"><i data-lucide="radio" class="icon-lucide"></i></div><div class="name">Webex</div>
           </div>
         </div>
 
@@ -319,7 +321,7 @@
         </div>
 
         <div class="add-form">
-          <h3>App personalizada</h3>
+          <h3><i data-lucide="plus-circle" class="icon-lucide"></i> App personalizada</h3>
           <div class="form-row">
             <label for="custom-name">Nombre</label>
             <input type="text" id="custom-name" placeholder="Mi App" />
@@ -330,7 +332,7 @@
           </div>
           <div class="form-row">
             <label for="custom-icon">Icono (emoji)</label>
-            <input type="text" id="custom-icon" placeholder="🌐" maxlength="2" />
+            <input type="text" id="custom-icon" placeholder="🌐" />
           </div>
           <button class="btn-add" id="btn-add-custom">+ Agregar</button>
         </div>
@@ -339,28 +341,28 @@
         <div class="section-title" style="margin-top:24px">Acerca de Yuki</div>
         <div class="settings-card" style="gap:0">
           <div style="display:flex;align-items:center;gap:14px;padding:4px 0 12px">
-            <div style="font-size:36px;line-height:1">🌸</div>
+            <div style="font-size:36px;line-height:1"><i data-lucide="flower" class="icon-lucide" style="width:48px;height:48px"></i></div>
             <div>
               <div style="font-size:15px;font-weight:700;color:#e9edef">Yuki</div>
-              <div style="font-size:12px;color:#00a884;font-weight:600">Versión 0.2.0</div>
+              <div style="font-size:12px;color:var(--accent);font-weight:600">Versión 0.2.0</div>
               <div style="font-size:11px;color:#667781;margin-top:2px">Multi-app desktop client</div>
             </div>
           </div>
-          <div style="border-top:1px solid #2a3942;padding-top:12px;display:flex;flex-direction:column;gap:8px">
+          <div style="border-top:1px solid var(--border-color);padding-top:12px;display:flex;flex-direction:column;gap:8px">
             <div style="font-size:11px;font-weight:700;color:#667781;text-transform:uppercase;letter-spacing:0.6px">Atajos de teclado</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px">
-              <div style="font-size:11px;color:#aebac1"><kbd style="background:#2a3942;border-radius:4px;padding:1px 5px;font-size:10px;color:#e9edef">Ctrl+1…9</kbd> Cambiar app</div>
-              <div style="font-size:11px;color:#aebac1"><kbd style="background:#2a3942;border-radius:4px;padding:1px 5px;font-size:10px;color:#e9edef">F12</kbd> DevTools principal</div>
-              <div style="font-size:11px;color:#aebac1"><kbd style="background:#2a3942;border-radius:4px;padding:1px 5px;font-size:10px;color:#e9edef">Ctrl+Shift+I</kbd> DevTools app</div>
-              <div style="font-size:11px;color:#aebac1"><kbd style="background:#2a3942;border-radius:4px;padding:1px 5px;font-size:10px;color:#e9edef">⚙️ clic</kbd> Este panel</div>
+              <div style="font-size:11px;color:#aebac1"><kbd style="background:var(--bg-card);border-radius:4px;padding:1px 5px;font-size:10px;color:#e9edef">Ctrl+1…9</kbd> Cambiar app</div>
+              <div style="font-size:11px;color:#aebac1"><kbd style="background:var(--bg-card);border-radius:4px;padding:1px 5px;font-size:10px;color:#e9edef">F12</kbd> DevTools principal</div>
+              <div style="font-size:11px;color:#aebac1"><kbd style="background:var(--bg-card);border-radius:4px;padding:1px 5px;font-size:10px;color:#e9edef">Ctrl+Shift+I</kbd> DevTools app</div>
+              <div style="font-size:11px;color:#aebac1"><kbd style="background:var(--bg-card);border-radius:4px;padding:1px 5px;font-size:10px;color:#e9edef"><i data-lucide="settings" class="icon-lucide"></i> clic</kbd> Este panel</div>
             </div>
           </div>
-          <div style="border-top:1px solid #2a3942;margin-top:12px;padding-top:12px;display:flex;flex-direction:column;gap:4px">
+          <div style="border-top:1px solid var(--border-color);margin-top:12px;padding-top:12px;display:flex;flex-direction:column;gap:4px">
             <div style="font-size:11px;font-weight:700;color:#667781;text-transform:uppercase;letter-spacing:0.6px">Tecnología</div>
             <div style="font-size:11px;color:#aebac1">Electron 35 · WebContentsView · Node.js 22</div>
             <div style="font-size:11px;color:#aebac1">contextIsolation · safeStorage PIN</div>
           </div>
-          <div style="border-top:1px solid #2a3942;margin-top:12px;padding-top:10px;text-align:center">
+          <div style="border-top:1px solid var(--border-color);margin-top:12px;padding-top:10px;text-align:center">
             <div style="font-size:10px;color:#667781">© 2025 Digital Fox Studio · github.com/foxen2005/yuki</div>
           </div>
         </div>
@@ -375,7 +377,7 @@
   <!-- Banner de autenticacion Google -->
   <div id="google-auth-banner" style="display:none">
     <div id="google-auth-banner-inner">
-      <span style="font-size:20px">🔐</span>
+      <span style="font-size:20px"><i data-lucide="lock" class="icon-lucide"></i></span>
       <div style="flex:1">
         <div style="font-size:13px;font-weight:600;color:#e9edef">Google bloquea el login en apps embebidas</div>
         <div style="font-size:11px;color:#667781;margin-top:2px">Abre una ventana separada para iniciar sesion</div>
