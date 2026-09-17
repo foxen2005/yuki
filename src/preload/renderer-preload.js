@@ -13,6 +13,7 @@ const ALLOWED_EVENTS = [
   'view:notification',
   'view:memory-report',
   'session:cleared',
+  'update:ready',
 ]
 
 contextBridge.exposeInMainWorld('yukiAPI', {
@@ -43,6 +44,8 @@ contextBridge.exposeInMainWorld('yukiAPI', {
   openUserdata:    ()     => ipcRenderer.send('open-userdata'),
   hideWindow:      ()     => ipcRenderer.send('window:hide'),
   quitApp:         ()     => ipcRenderer.send('window:quit'),
+  resetPermissions:()     => ipcRenderer.invoke('permissions:reset'),
+  installUpdate:   ()     => ipcRenderer.send('update:install'),
 
   // ── PIN (almacenamiento seguro) ──────────────────────────────────────────
   savePin:   (pin) => ipcRenderer.invoke('pin:save', pin),

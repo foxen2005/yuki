@@ -2,6 +2,7 @@ const { WebContentsView, session, shell, Menu } = require('electron')
 const path = require('path')
 const { spoofSession } = require('./session-manager')
 const { bindAppSwitchKeys } = require('./window')
+const permissions = require('./permissions')
 
 class ViewManager {
   constructor(win) {
@@ -37,12 +38,8 @@ class ViewManager {
     const ses = session.fromPartition(partition)
     spoofSession(ses)
 
-    ses.setPermissionRequestHandler((_, permission, callback) => {
-      callback(!['midi', 'midiSysex'].includes(permission))
-    })
-    ses.setPermissionCheckHandler((_, permission) => {
-      return !['midi', 'midiSysex'].includes(permission)
-    })
+    // Cámara/micrófono/ubicación se preguntan una vez por sitio (ver permissions.js)
+    permissions.attach(ses, this.win)
 
     // Corrector ortográfico: español + inglés. Sin esto Electron usa solo el
     // idioma del sistema y las sugerencias no aparecen para el otro idioma.
@@ -57,9 +54,13 @@ class ViewManager {
     const view = new WebContentsView({
       webPreferences: {
         session: ses,
+        // contextIsolation:false es necesario para que webview-preload.js ajuste
+        // window.chrome / navigator.* en el mundo de la página. sandbox:true sigue
+        // siendo posible: el preload solo usa ipcRenderer, que Electron expone
+        // también en renderers sandboxed.
         contextIsolation: false,
         nodeIntegration: false,
-        sandbox: false,
+        sandbox: true,
         spellcheck: true,
         preload: path.join(__dirname, '../preload/webview-preload.js'),
       },

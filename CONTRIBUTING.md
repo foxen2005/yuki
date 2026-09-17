@@ -133,5 +133,5 @@ These are sent from `webview-preload.js` via `ipcRenderer.send()` and received i
 - [ ] Test spellcheck suggestions in WhatsApp and Gmail
 - [ ] Test backup export/import round-trip
 - [ ] Test sleep/wake on 3+ apps
-- [ ] Tag and release with both exes: `git tag vX.Y.Z && git push --tags && gh release create vX.Y.Z "dist/Yuki Setup X.Y.Z.exe" "dist/Yuki X.Y.Z.exe"`
-- [ ] Update the download links in `README.md` and `docs/index.html`
+- [ ] `GH_TOKEN=$(gh auth token) npm run release` — builds and publishes the GitHub release with `Yuki-Setup.exe`, `Yuki-Portable.exe` and `latest.yml` (the file installed copies poll for auto-update). Then `git tag vX.Y.Z && git push --tags`.
+- [ ] Download links use `releases/latest/download/…` so they never need updating; only bump the version shown in `docs/index.html`

@@ -82,6 +82,7 @@ async function tryUnlock(pin) {
 // ── Toast ─────────────────────────────────────────────────────────────────────
 function showToast(msg, duration = 2000) {
   const t = document.getElementById('toast')
+  if (t.classList.contains('sticky')) return   // no pisar el aviso de actualización
   t.textContent = msg
   t.classList.add('show')
   setTimeout(() => t.classList.remove('show'), duration)
@@ -838,6 +839,18 @@ function hideGoogleAuthBanner() {
     document.getElementById('btn-open-userdata').addEventListener('click', () => {
       window.yukiAPI.openUserdata()
     })
+    document.getElementById('btn-reset-permissions').addEventListener('click', async () => {
+      if (!confirm('¿Olvidar todas las decisiones de cámara, micrófono y ubicación?\nLos sitios volverán a preguntar.')) return
+      await window.yukiAPI.resetPermissions()
+      showToast('Permisos de sitios reiniciados')
+    })
+
+    // Logo del overlay: fallback sin handler inline (la CSP no permite onerror="")
+    const overlayLogo = document.getElementById('settings-overlay-logo')
+    overlayLogo.addEventListener('error', () => {
+      overlayLogo.style.display = 'none'
+      document.getElementById('settings-overlay-fallback').style.display = 'block'
+    })
 
     // Google auth banner
     document.getElementById('google-auth-btn').addEventListener('click', () => {
@@ -904,6 +917,15 @@ window.yukiAPI.on('google-auth-done', (partition) => {
 window.yukiAPI.on('yuki-window-show', () => {
   const { enabled } = getLock()
   if (enabled) showLock()
+})
+
+// Actualización descargada (electron-updater): el usuario decide cuándo reiniciar.
+// Si no lo hace, se instala sola al cerrar Yuki.
+window.yukiAPI.on('update:ready', ({ version }) => {
+  const t = document.getElementById('toast')
+  t.innerHTML = `Yuki ${esc(version)} lista · <button id="toast-update-btn">Reiniciar ahora</button>`
+  t.classList.add('show', 'sticky')
+  document.getElementById('toast-update-btn').addEventListener('click', () => window.yukiAPI.installUpdate())
 })
 
 window.yukiAPI.on('switch-app-index', (index) => {

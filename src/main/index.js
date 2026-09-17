@@ -4,6 +4,7 @@ const { createWindow, createTray, registerShortcuts, getWin, showMain } = requir
 const ViewManager = require('./view-manager')
 const { registerHandlers } = require('./ipc-handlers')
 const { setupAutosave } = require('./autosave')
+const { setupUpdater } = require('./updater')
 
 // ── Instancia única ────────────────────────────────────────────────────────
 const gotLock = app.requestSingleInstanceLock()
@@ -40,6 +41,7 @@ app.whenReady().then(() => {
 
   registerHandlers({ win, viewManager })
   setupAutosave({ win, viewManager })
+  setupUpdater(getWin)
 
   // Flush periódico de sesiones cada 60s — protege contra apagados bruscos
   setInterval(() => {

@@ -3,8 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <title>Yuki</title>
+  <!-- CSP: el shell solo ejecuta scripts locales. data: en img/media por los íconos
+       subidos por el usuario y el sonido personalizado (ambos guardados como data URL). -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-src 'none'" />
   <link rel="stylesheet" href="styles.css" />
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Lucide vendorizado (v1.47.0). Antes se cargaba unpkg.com/lucide@latest:
+       script remoto sin versión fijada dentro del proceso más privilegiado. -->
+  <script src="vendor/lucide.min.js"></script>
 </head>
 <body>
   <div class="titlebar-drag"></div>
@@ -31,7 +37,7 @@
     </div>
     <!-- Capa 2: logo/texto — hermano separado, z-index mayor, sin blur que lo afecte -->
     <div id="settings-overlay-content">
-      <img src="../../icons/icon.png" alt="Yuki" id="settings-overlay-logo" onerror="this.style.display='none';document.getElementById('settings-overlay-fallback').style.display='block'" />
+      <img src="../../icons/icon.png" alt="Yuki" id="settings-overlay-logo" />
       <div id="settings-overlay-fallback" style="display:none;font-size:64px">🌸</div>
       <div id="settings-overlay-name">Yuki</div>
       <div id="settings-overlay-hint">Configura tus apps</div>
@@ -225,6 +231,18 @@
             </div>
             <div class="settings-control">
               <button class="backup-btn" id="btn-open-userdata">Ver carpeta</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span class="settings-icon">🎙️</span>
+              <div>
+                <div class="settings-name">Permisos de sitios</div>
+                <div class="settings-desc">Cámara, micrófono y ubicación que permitiste o bloqueaste</div>
+              </div>
+            </div>
+            <div class="settings-control">
+              <button class="backup-btn" id="btn-reset-permissions">Olvidar todo</button>
             </div>
           </div>
         </div>

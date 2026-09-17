@@ -1,4 +1,5 @@
 const { ipcMain, dialog, shell, app, session, safeStorage } = require('electron')
+const permissions = require('./permissions')
 const path = require('path')
 const fs = require('fs')
 const { openGoogleLogin } = require('./google-auth')
@@ -103,6 +104,9 @@ function registerHandlers({ win, viewManager }) {
   ipcMain.on('open-userdata', () => {
     shell.openPath(app.getPath('userData'))
   })
+
+  // ── Permisos de sitios ────────────────────────────────────────────────────
+  ipcMain.handle('permissions:reset', () => { permissions.reset(); return { ok: true } })
 
   // ── Ventana ───────────────────────────────────────────────────────────────
   ipcMain.on('window:hide', () => { win.hide() })

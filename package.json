@@ -1,13 +1,14 @@
 {
   "name": "yuki",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Multi-app desktop client",
   "main": "src/main/index.js",
   "scripts": {
     "start": "set ELECTRON_RUN_AS_NODE=&&electron .",
     "start:dev": "set ELECTRON_RUN_AS_NODE=&&electron . --inspect=9229",
     "build": "electron-builder build --win",
-    "build:dir": "electron-builder build --win --dir"
+    "build:dir": "electron-builder build --win --dir",
+    "release": "electron-builder build --win --publish always"
   },
   "build": {
     "appId": "com.yuki.app",
@@ -25,11 +26,15 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     },
@@ -38,7 +43,19 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Yuki"
+      "shortcutName": "Yuki",
+      "artifactName": "Yuki-Setup.${ext}"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "foxen2005",
+        "repo": "yuki",
+        "releaseType": "release"
+      }
+    ],
+    "portable": {
+      "artifactName": "Yuki-Portable.${ext}"
     }
   },
   "devDependencies": {
@@ -47,5 +64,7 @@
     "jimp": "^0.22.12",
     "png-to-ico": "^3.0.1"
   },
-  "dependencies": {}
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  }
 }
