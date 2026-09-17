@@ -9,3 +9,4 @@ yuki-backup-*.json
 .DS_Store
 Thumbs.db
 *.enc
+legacy/
