@@ -73,24 +73,3 @@ if (navigator.userAgentData) {
   } catch(e) {}
 }
 
-;['__electron', '__electronBinding', 'electronAPI', 'electron'].forEach(key => {
-  try { delete window[key] } catch(e) {}
-})
-
-try {
-  Object.defineProperty(navigator, 'credentials', {
-    value: {
-      get:                () => Promise.reject(new DOMException('Not allowed', 'NotAllowedError')),
-      create:             () => Promise.reject(new DOMException('Not allowed', 'NotAllowedError')),
-      store:              () => Promise.reject(new DOMException('Not allowed', 'NotAllowedError')),
-      preventSilentAccess: () => Promise.resolve(),
-    },
-    writable: false, configurable: false,
-  })
-} catch(e) {}
-
-const _orig = Object.getOwnPropertyDescriptor.bind(Object)
-Object.getOwnPropertyDescriptor = function(target, key) {
-  if (key === 'webdriver' && target === navigator) return undefined
-  return _orig(target, key)
-}

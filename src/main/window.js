@@ -1,8 +1,9 @@
 const { BrowserWindow, Tray, Menu, nativeImage, globalShortcut } = require('electron')
 const path = require('path')
 const fs = require('fs')
+const { app } = require('electron')
 
-const ICONS_DIR = path.join(__dirname, '../../icons')
+const ICONS_DIR = path.join(app.getAppPath(), 'icons')
 
 let win = null
 let tray = null
@@ -38,7 +39,7 @@ function createWindow() {
   win.loadFile(path.join(__dirname, '../renderer/index.html'))
 
   win.on('close', (e) => {
-    if (!require('electron').app.isQuiting) {
+    if (!app.isQuiting) {
       e.preventDefault()
       win.hide()
     }
@@ -71,7 +72,7 @@ function createTray(mainWin) {
   const contextMenu = Menu.buildFromTemplate([
     { label: 'Abrir Yuki', click: () => { mainWin.show(); mainWin.focus() } },
     { type: 'separator' },
-    { label: 'Salir', click: () => { require('electron').app.isQuiting = true; require('electron').app.quit() } },
+    { label: 'Salir', click: () => { app.isQuiting = true; app.quit() } },
   ])
   tray.setContextMenu(contextMenu)
 

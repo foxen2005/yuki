@@ -16,6 +16,7 @@
     "directories": {
       "output": "dist"
     },
+    "icon": "icons/icon.ico",
     "files": [
       "src/**",
       "icons/**"
@@ -25,9 +26,12 @@
         {
           "target": "nsis",
           "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
         }
-      ],
-      "icon": "icons/icon.ico"
+      ]
     },
     "nsis": {
       "oneClick": false,

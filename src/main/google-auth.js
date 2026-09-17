@@ -1,6 +1,6 @@
 const { BrowserWindow, session } = require('electron')
 const path = require('path')
-const { spoofSession, CHROME_UA } = require('./session-manager')
+const { spoofSession, getChromeUA } = require('./session-manager')
 
 function openGoogleLogin(win, partition, { clearFirst = false } = {}) {
   return new Promise(async (resolve) => {
@@ -39,7 +39,8 @@ function openGoogleLogin(win, partition, { clearFirst = false } = {}) {
       },
     })
 
-    loginWin.loadURL('https://accounts.google.com/ServiceLogin?service=mail', { userAgent: CHROME_UA })
+    const ua = getChromeUA(ses)
+    loginWin.loadURL('https://accounts.google.com/ServiceLogin?service=mail', { userAgent: ua })
 
     loginWin.webContents.on('did-navigate', (_, url) => {
       const done = url.startsWith('https://mail.google.com')

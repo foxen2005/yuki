@@ -22,14 +22,19 @@ function registerHandlers({ win, viewManager }) {
   ipcMain.handle('view:reload', (_, id) => {
     viewManager.reload(id)
   })
-  ipcMain.handle('view:resize-all', (_, leftOffset) => {
-    viewManager.resizeAll(leftOffset ?? 64)
+  ipcMain.handle('view:capture-active', async () => viewManager.captureActive())
+
+  ipcMain.handle('view:resize-all', (_, leftOffset, rightCrop) => {
+    viewManager.resizeAll(leftOffset ?? 72, rightCrop ?? 12)
   })
   ipcMain.handle('view:devtools', (_, id) => {
     viewManager.openDevTools(id)
   })
   ipcMain.handle('view:set-auto-sleep', (_, minutes) => {
     viewManager.setAutoSleepMinutes(minutes)
+  })
+  ipcMain.handle('view:set-sleepable', (_, id, value) => {
+    viewManager.setSleepable(id, value)
   })
 
   // ── Google Auth ────────────────────────────────────────────────────────────
@@ -96,6 +101,10 @@ function registerHandlers({ win, viewManager }) {
   ipcMain.on('open-userdata', () => {
     shell.openPath(app.getPath('userData'))
   })
+
+  // ── Ventana ───────────────────────────────────────────────────────────────
+  ipcMain.on('window:hide', () => { win.hide() })
+  ipcMain.on('window:quit', () => { app.isQuiting = true; app.quit() })
 
   // ── PIN (safeStorage) ─────────────────────────────────────────────────────
   ipcMain.handle('pin:save', (_, pin) => {

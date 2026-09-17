@@ -1,9 +1,26 @@
 const { app, session } = require('electron')
 const { spoofSession } = require('./session-manager')
-const { createWindow, createTray, registerShortcuts } = require('./window')
+const { createWindow, createTray, registerShortcuts, getWin } = require('./window')
 const ViewManager = require('./view-manager')
 const { registerHandlers } = require('./ipc-handlers')
 const { setupAutosave } = require('./autosave')
+
+// ── Instancia única ────────────────────────────────────────────────────────
+const gotLock = app.requestSingleInstanceLock()
+if (!gotLock) {
+  // Ya hay una instancia corriendo → salir inmediatamente
+  app.quit()
+  process.exit(0)
+}
+
+// Si el usuario intenta abrir una segunda instancia, enfocar la existente
+app.on('second-instance', () => {
+  const win = getWin()
+  if (!win) return
+  if (win.isMinimized()) win.restore()
+  win.show()
+  win.focus()
+})
 
 app.setAppUserModelId('com.yuki.app')
 app.commandLine.appendSwitch('disable-blink-features', 'AutomationControlled')

@@ -3,12 +3,12 @@ window.addEventListener('error', (e) => {
 })
 
 // ── Estado ───────────────────────────────────────────────────────────────────
-const STORAGE_KEY  = 'yuki-apps'
+const STORAGE_KEY = 'yuki-apps'
 const SETTINGS_KEY = 'yuki-settings'
 let activeId = null
 let pickerTargetId = null
 const createdViews = new Set()  // IDs de vistas ya creadas en el proceso principal
-const badgeCounts  = {}
+const badgeCounts = {}
 
 // ── Persistencia ─────────────────────────────────────────────────────────────
 function loadApps() {
@@ -23,8 +23,8 @@ function loadSettings() {
 function saveSettings(obj) {
   localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...loadSettings(), ...obj }))
 }
-function getVolume()     { const s = loadSettings(); return s.volume !== undefined ? s.volume : 0.5 }
-function isDND()         { return loadSettings().dnd === true }
+function getVolume() { const s = loadSettings(); return s.volume !== undefined ? s.volume : 0.5 }
+function isDND() { return loadSettings().dnd === true }
 function getNotifSound() { return loadSettings().notifSound || 'default' }
 function getCustomSoundData() {
   try { return localStorage.getItem('yuki-custom-sound') || null } catch { return null }
@@ -105,23 +105,25 @@ function sleepInactive() {
   const apps = loadApps()
   apps.forEach(app => {
     if (app.sleep && app.id !== activeId && createdViews.has(app.id)) {
-      window.yukiAPI.sleepView(app.id).catch(() => {})
+      window.yukiAPI.sleepView(app.id).catch(() => { })
     }
   })
 }
 
 // ── Navegación ────────────────────────────────────────────────────────────────
 function switchTo(id) {
-  const mainContainer = document.getElementById('main-container');
-  mainContainer.style.opacity = '0';
-  mainContainer.style.transform = 'scale(0.98)';
-  setTimeout(() => {
-    mainContainer.style.transition = 'var(--transition)';
-    mainContainer.style.opacity = '1';
-    mainContainer.style.transform = 'scale(1)';
-  }, 50);
-  const apps  = loadApps()
-  const app   = apps.find(a => a.id === id)
+  const mainContainer = document.getElementById('content');
+  if (mainContainer) {
+    mainContainer.style.opacity = '0';
+    mainContainer.style.transform = 'scale(0.98)';
+    setTimeout(() => {
+      mainContainer.style.transition = 'var(--transition)';
+      mainContainer.style.opacity = '1';
+      mainContainer.style.transform = 'scale(1)';
+    }, 50);
+  }
+  const apps = loadApps()
+  const app = apps.find(a => a.id === id)
   if (!app) return
 
   // Crear vista la primera vez que se abre
@@ -130,8 +132,10 @@ function switchTo(id) {
     createdViews.add(id)
   } else {
     // La vista ya existe — activarla (despierta si dormía)
-    window.yukiAPI.openView(id, app.url, `persist:${id}`).catch(() => {})
+    window.yukiAPI.openView(id, app.url, `persist:${id}`).catch(() => { })
   }
+  // Sincronizar el flag sleepable con el proceso main
+  window.yukiAPI.setSleepable(id, !!app.sleep).catch(() => { })
 
   if (activeId === id) {
     clearBadge(id)
@@ -158,7 +162,7 @@ function switchTo(id) {
 
 // ── Render sidebar ────────────────────────────────────────────────────────────
 function render() {
-  const apps    = loadApps()
+  const apps = loadApps()
   const sidebar = document.getElementById('apps-list')
   sidebar.innerHTML = ''
 
@@ -166,7 +170,7 @@ function render() {
   const currentIds = new Set(apps.map(a => a.id))
   for (const id of [...createdViews]) {
     if (!currentIds.has(id)) {
-      window.yukiAPI.destroyView(id).catch(() => {})
+      window.yukiAPI.destroyView(id).catch(() => { })
       createdViews.delete(id)
     }
   }
@@ -178,8 +182,8 @@ function render() {
       <button class="app-btn ${activeId === app.id ? 'active' : ''}"
               data-id="${app.id}" title="${app.name}" aria-label="${app.name}">
         ${renderIconHTML(app.icon)}
+        <span class="badge" id="badge-${app.id}"></span>
       </button>
-      <span class="badge" id="badge-${app.id}"></span>
       <div class="app-label">${app.name}</div>
     `
     item.querySelector('.app-btn').addEventListener('click', () => switchTo(app.id))
@@ -211,7 +215,7 @@ function render() {
       if (!draggedId || draggedId === app.id) return
       const allApps = loadApps()
       const from = allApps.findIndex(a => a.id === draggedId)
-      const to   = allApps.findIndex(a => a.id === app.id)
+      const to = allApps.findIndex(a => a.id === app.id)
       if (from === -1 || to === -1) return
       const [moved] = allApps.splice(from, 1)
       allApps.splice(to, 0, moved)
@@ -281,7 +285,7 @@ function renderServicesList(apps) {
     })
 
     // Renombrar inline
-    const nameSpan  = card.querySelector('.svc-name')
+    const nameSpan = card.querySelector('.svc-name')
     const nameInput = card.querySelector('.svc-name-input')
     nameSpan.setAttribute('role', 'button')
     nameSpan.setAttribute('tabindex', '0')
@@ -305,7 +309,7 @@ function renderServicesList(apps) {
       const newName = nameInput.value.trim()
       if (newName && newName !== app.name) {
         const allApps = loadApps()
-        const target  = allApps.find(a => a.id === app.id)
+        const target = allApps.find(a => a.id === app.id)
         if (target) {
           target.name = newName
           saveApps(allApps)
@@ -320,7 +324,7 @@ function renderServicesList(apps) {
     }
     nameInput.addEventListener('blur', commitRename)
     nameInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter')  { e.preventDefault(); commitRename() }
+      if (e.key === 'Enter') { e.preventDefault(); commitRename() }
       if (e.key === 'Escape') { renaming = true; nameInput.value = app.name; nameSpan.style.display = ''; nameInput.style.display = 'none'; nameInput.blur() }
     })
 
@@ -337,14 +341,13 @@ function renderServicesList(apps) {
     // Sleep toggle
     card.querySelector('.sleep-checkbox').addEventListener('change', (e) => {
       const allApps = loadApps()
-      const target  = allApps.find(a => a.id === app.id)
+      const target = allApps.find(a => a.id === app.id)
       if (target) {
         target.sleep = e.target.checked
         saveApps(allApps)
-        if (!target.sleep) {
-          // Si se desactiva sleep, dejar que la vista se despierte sola al visitarla
-        }
-        showToast(target.sleep ? `<i data-lucide="moon" class="icon-lucide"></i> Sleep activado en ${app.name}` : `▶ Sleep desactivado en ${app.name}`)
+        // Notificar al proceso main para que respete el toggle en el auto-sleep
+        window.yukiAPI.setSleepable(app.id, target.sleep).catch(() => { })
+        showToast(target.sleep ? `Sleep activado en ${app.name}` : `Sleep desactivado en ${app.name}`)
       }
     })
 
@@ -359,7 +362,7 @@ function renderServicesList(apps) {
     // Reload
     card.querySelector('.reload-btn').addEventListener('click', () => {
       showLoading(app.name)
-      window.yukiAPI.reloadView(app.id).catch(() => {})
+      window.yukiAPI.reloadView(app.id).catch(() => { })
       switchTo(app.id)
     })
 
@@ -368,7 +371,7 @@ function renderServicesList(apps) {
       if (!confirm(`¿Borrar caché y sesión de ${app.name}?\nDeberás iniciar sesión de nuevo.`)) return
       window.yukiAPI.clearSession(`persist:${app.id}`)
         .then(() => showToast(`Limpiando sesión de ${app.name}...`, 2000))
-        .catch(() => {})
+        .catch(() => { })
     })
 
     // Eliminar
@@ -376,6 +379,7 @@ function renderServicesList(apps) {
 
     list.appendChild(card)
   })
+  if (window.lucide) window.lucide.createIcons()
 }
 
 // ── Agregar apps ──────────────────────────────────────────────────────────────
@@ -388,10 +392,10 @@ function generateId(name) {
 }
 
 function addFromCatalog(name, icon, url) {
-  const apps  = loadApps()
-  const same  = apps.filter(a => a.url === url)
+  const apps = loadApps()
+  const same = apps.filter(a => a.url === url)
   const label = same.length === 0 ? name : `${name} ${same.length + 1}`
-  const id    = generateId(label)
+  const id = generateId(label)
   apps.push({ id, name: label, icon, url })
   saveApps(apps)
   render()
@@ -401,15 +405,15 @@ function addFromCatalog(name, icon, url) {
 
 function addCustomApp() {
   const name = document.getElementById('custom-name').value.trim()
-  const url  = document.getElementById('custom-url').value.trim()
+  const url = document.getElementById('custom-url').value.trim()
   const icon = document.getElementById('custom-icon').value.trim() || '🌐'
   if (!name || !url) return
   const apps = loadApps()
-  const id   = generateId(name)
+  const id = generateId(name)
   apps.push({ id, name, icon, url })
   saveApps(apps)
   document.getElementById('custom-name').value = ''
-  document.getElementById('custom-url').value  = ''
+  document.getElementById('custom-url').value = ''
   document.getElementById('custom-icon').value = ''
   render()
   switchTo(id)
@@ -441,8 +445,8 @@ function resizeImage(dataUrl, size, callback) {
     canvas.width = canvas.height = size
     const ctx = canvas.getContext('2d')
     const min = Math.min(img.width, img.height)
-    const sx  = (img.width  - min) / 2
-    const sy  = (img.height - min) / 2
+    const sx = (img.width - min) / 2
+    const sy = (img.height - min) / 2
     ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size)
     callback(canvas.toDataURL('image/png'))
   }
@@ -452,24 +456,64 @@ function resizeImage(dataUrl, size, callback) {
 
 // ── Settings panel ────────────────────────────────────────────────────────────
 // Las WebContentsViews son ventanas nativas — se superponen sobre el DOM.
-// Al abrir settings, empujamos las vistas hacia la derecha del panel (64+340=404).
-const SETTINGS_WIDTH = 340
+// El panel de settings desliza desde la DERECHA (400px). Al abrirlo, reducimos
+// el ancho de las vistas recortando por la derecha en lugar de mover el borde izquierdo.
+const SETTINGS_WIDTH = 400
+
+async function openSettingsPanel() {
+  renderServicesList(loadApps())
+  if (window.lucide) window.lucide.createIcons()
+
+  const overlay = document.getElementById('settings-content-overlay')
+
+  // Capturar el WebContentsView activo ANTES de ocultarlo
+  const blurDiv = document.getElementById('settings-overlay-blur')
+  try {
+    const dataUrl = await window.yukiAPI.captureActive()
+    if (dataUrl && blurDiv) {
+      blurDiv.style.backgroundImage = `url("${dataUrl}")`
+    } else if (blurDiv) {
+      blurDiv.style.backgroundImage = 'none'
+    }
+  } catch (e) {
+    if (blurDiv) blurDiv.style.backgroundImage = 'none'
+  }
+
+  // Ocultar la vista nativa y mostrar ambas capas
+  window.yukiAPI.resizeViews(9999, 12)
+  const content = document.getElementById('settings-overlay-content')
+  overlay.style.display = 'block'
+  content.style.display = 'flex'
+  requestAnimationFrame(() => {
+    overlay.classList.add('visible')
+    content.classList.add('visible')
+  })
+}
 
 function toggleSettings() {
   const isOpen = document.getElementById('settings-overlay').classList.contains('open')
   document.getElementById('settings-overlay').classList.toggle('open')
   document.getElementById('settings-toggle').classList.toggle('open', !isOpen)
   if (!isOpen) {
-    renderServicesList(loadApps())
-    window.yukiAPI.resizeViews(64 + SETTINGS_WIDTH)
+    openSettingsPanel()
   } else {
-    window.yukiAPI.resizeViews(64)
+    window.yukiAPI.resizeViews(72, 12)
+    const overlay = document.getElementById('settings-content-overlay')
+    const content = document.getElementById('settings-overlay-content')
+    overlay.classList.remove('visible')
+    content.classList.remove('visible')
+    setTimeout(() => { overlay.style.display = 'none'; content.style.display = 'none' }, 250)
   }
 }
 function closeSettings() {
   document.getElementById('settings-overlay').classList.remove('open')
   document.getElementById('settings-toggle').classList.remove('open')
-  window.yukiAPI.resizeViews(64)
+  window.yukiAPI.resizeViews(72, 12)
+  const overlay = document.getElementById('settings-content-overlay')
+  const content = document.getElementById('settings-overlay-content')
+  overlay.classList.remove('visible')
+  content.classList.remove('visible')
+  setTimeout(() => { overlay.style.display = 'none'; content.style.display = 'none' }, 250)
 }
 
 // ── Sonido de notificación ────────────────────────────────────────────────────
@@ -477,16 +521,16 @@ let audioCtx = null
 
 const BUILT_IN_SOUNDS = {
   default: [
-    { freq: 880,  start: 0,    dur: 0.15, type: 'sine' },
+    { freq: 880, start: 0, dur: 0.15, type: 'sine' },
     { freq: 1100, start: 0.18, dur: 0.12, type: 'sine' },
   ],
-  suave:   [{ freq: 660,  start: 0,    dur: 0.25, type: 'sine' }],
+  suave: [{ freq: 660, start: 0, dur: 0.25, type: 'sine' }],
   campana: [
-    { freq: 1318, start: 0,    dur: 0.08, type: 'triangle' },
+    { freq: 1318, start: 0, dur: 0.08, type: 'triangle' },
     { freq: 1318, start: 0.10, dur: 0.40, type: 'sine' },
   ],
   alerta: [
-    { freq: 1000, start: 0,    dur: 0.10, type: 'square' },
+    { freq: 1000, start: 0, dur: 0.10, type: 'square' },
     { freq: 1000, start: 0.15, dur: 0.10, type: 'square' },
     { freq: 1200, start: 0.30, dur: 0.15, type: 'square' },
   ],
@@ -500,14 +544,14 @@ function playNotificationSound() {
 
   if (sound === 'custom') {
     const data = getCustomSoundData()
-    if (data) { const a = new Audio(data); a.volume = vol; a.play().catch(() => {}); return }
+    if (data) { const a = new Audio(data); a.volume = vol; a.play().catch(() => { }); return }
   }
 
   if (!audioCtx) audioCtx = new AudioContext()
   const tones = BUILT_IN_SOUNDS[sound] || BUILT_IN_SOUNDS.default
 
   tones.forEach(({ freq, start, dur, type }) => {
-    const osc  = audioCtx.createOscillator()
+    const osc = audioCtx.createOscillator()
     const gain = audioCtx.createGain()
     osc.connect(gain); gain.connect(audioCtx.destination)
     osc.type = type || 'sine'
@@ -516,7 +560,7 @@ function playNotificationSound() {
     gain.gain.linearRampToValueAtTime(vol * 0.35, audioCtx.currentTime + start + 0.03)
     gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + start + dur)
     osc.start(audioCtx.currentTime + start)
-    osc.stop(audioCtx.currentTime  + start + dur)
+    osc.stop(audioCtx.currentTime + start + dur)
   })
 }
 
@@ -530,7 +574,7 @@ function updateMemoryUI(report) {
   }
   const apps = loadApps()
   list.innerHTML = report.map(({ id, privateMB }) => {
-    const app  = apps.find(a => a.id === id)
+    const app = apps.find(a => a.id === id)
     const name = app ? app.name : id
     const icon = app ? renderIconHTML(app.icon) : '🌐'
     return `<div class="memory-item">
@@ -555,22 +599,32 @@ function hideGoogleAuthBanner() {
 }
 
 // ── Event listeners de settings ───────────────────────────────────────────────
-;(function initSettings() {
+; (function initSettings() {
   try {
     document.getElementById('settings-toggle').addEventListener('click', toggleSettings)
     document.getElementById('settings-close-btn').addEventListener('click', closeSettings)
+    document.getElementById('btn-hide-window').addEventListener('click', () => window.yukiAPI.hideWindow())
+    document.getElementById('btn-quit-app').addEventListener('click', () => {
+      if (confirm('¿Cerrar Yuki completamente?')) window.yukiAPI.quitApp()
+    })
 
-    const volSlider  = document.getElementById('vol-slider')
-    const volValue   = document.getElementById('vol-value')
-    const dndToggle  = document.getElementById('dnd-toggle')
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.getElementById('settings-overlay').classList.contains('open')) {
+        closeSettings()
+      }
+    })
+
+    const volSlider = document.getElementById('vol-slider')
+    const volValue = document.getElementById('vol-value')
+    const dndToggle = document.getElementById('dnd-toggle')
 
     const savedVol = Math.round(getVolume() * 100)
     if (volSlider) volSlider.value = savedVol
-    if (volValue)  volValue.textContent = savedVol + '%'
+    if (volValue) volValue.textContent = savedVol + '%'
     if (dndToggle) dndToggle.checked = isDND()
 
-    const soundSelect   = document.getElementById('sound-select')
-    const soundFileRow  = document.getElementById('sound-file-row')
+    const soundSelect = document.getElementById('sound-select')
+    const soundFileRow = document.getElementById('sound-file-row')
     const soundFileName = document.getElementById('sound-file-name')
     const savedSound = getNotifSound()
     if (soundSelect) {
@@ -600,7 +654,7 @@ function hideGoogleAuthBanner() {
     })
 
     const btnSoundFile = document.getElementById('btn-sound-file')
-    const audioInput   = document.getElementById('audio-file-input')
+    const audioInput = document.getElementById('audio-file-input')
     if (btnSoundFile && audioInput) {
       btnSoundFile.addEventListener('click', () => audioInput.click())
       audioInput.addEventListener('change', function () {
@@ -639,10 +693,10 @@ function hideGoogleAuthBanner() {
     }
 
     // Seguridad — lock screen
-    const lockToggle  = document.getElementById('lock-enabled-toggle')
+    const lockToggle = document.getElementById('lock-enabled-toggle')
     const pinSetupInp = document.getElementById('pin-setup-input')
-    const pinSaveBtn  = document.getElementById('pin-save-btn')
-    const pinStatus   = document.getElementById('pin-status')
+    const pinSaveBtn = document.getElementById('pin-save-btn')
+    const pinStatus = document.getElementById('pin-status')
 
     const lockCfg = getLock()
     if (lockToggle) lockToggle.checked = !!lockCfg.enabled
@@ -699,7 +753,7 @@ function hideGoogleAuthBanner() {
       reader.onload = e => {
         resizeImage(e.target.result, 128, resized => {
           const apps = loadApps()
-          const app  = apps.find(a => a.id === pickerTargetId)
+          const app = apps.find(a => a.id === pickerTargetId)
           if (app) { app.icon = resized; saveApps(apps); render(); showToast('Icono actualizado') }
           pickerTargetId = null
         })
@@ -718,7 +772,7 @@ function hideGoogleAuthBanner() {
         customSound: getCustomSoundData(),
       }
       const res = await window.yukiAPI.exportConfig(data)
-      if (res.ok)           showToast('Backup guardado correctamente', 3000)
+      if (res.ok) showToast('Backup guardado correctamente', 3000)
       else if (!res.canceled) showToast('Error al guardar: ' + res.error, 4000)
     })
     document.getElementById('btn-import-config').addEventListener('click', async () => {
@@ -727,12 +781,12 @@ function hideGoogleAuthBanner() {
       const { data } = res
       if (!data || data.version !== 1) { showToast('Archivo de backup no válido', 3000); return }
       try {
-        if (data.apps)       localStorage.setItem(STORAGE_KEY,  JSON.stringify(data.apps))
-        if (data.settings)   localStorage.setItem(SETTINGS_KEY, JSON.stringify(data.settings))
+        if (data.apps) localStorage.setItem(STORAGE_KEY, JSON.stringify(data.apps))
+        if (data.settings) localStorage.setItem(SETTINGS_KEY, JSON.stringify(data.settings))
         if (data.customSound) localStorage.setItem('yuki-custom-sound', data.customSound)
         showToast('Configuración restaurada', 2500)
         render()
-      } catch(e) { showToast('Error al restaurar: ' + e.message, 4000) }
+      } catch (e) { showToast('Error al restaurar: ' + e.message, 4000) }
     })
     document.getElementById('btn-open-userdata').addEventListener('click', () => {
       window.yukiAPI.openUserdata()
@@ -743,7 +797,7 @@ function hideGoogleAuthBanner() {
       if (googleAuthPartition) window.yukiAPI.openGoogleAuth(googleAuthPartition, false)
     })
 
-  } catch(e) { console.error('[Yuki] initSettings error:', e) }
+  } catch (e) { console.error('[Yuki] initSettings error:', e) }
 })()
 
 // ── Eventos desde el proceso principal ───────────────────────────────────────
@@ -761,7 +815,7 @@ window.yukiAPI.on('view:loading-stop', ({ id }) => {
 window.yukiAPI.on('view:title-updated', ({ id, title }) => {
   const match = title.match(/\((\d+)\)/)
   const count = match ? parseInt(match[1]) : 0
-  const prev  = badgeCounts[id] || 0
+  const prev = badgeCounts[id] || 0
   if (count > prev && id !== activeId) playNotificationSound()
   badgeCounts[id] = count
   updateBadge(id, count)
@@ -785,9 +839,9 @@ window.yukiAPI.on('view:memory-report', (report) => {
 
 window.yukiAPI.on('session:cleared', ({ id }) => {
   const allApps = loadApps()
-  const app     = allApps.find(a => a.id === id)
+  const app = allApps.find(a => a.id === id)
   if (app) {
-    window.yukiAPI.openView(id, app.url, `persist:${id}`).catch(() => {})
+    window.yukiAPI.openView(id, app.url, `persist:${id}`).catch(() => { })
     switchTo(id)
   }
   showToast(`Sesión de ${app ? app.name : id} limpiada`, 2500)
@@ -796,9 +850,9 @@ window.yukiAPI.on('session:cleared', ({ id }) => {
 window.yukiAPI.on('google-auth-done', (partition) => {
   hideGoogleAuthBanner()
   const apps = loadApps()
-  const app  = apps.find(a => `persist:${a.id}` === partition)
+  const app = apps.find(a => `persist:${a.id}` === partition)
   if (!app) return
-  window.yukiAPI.openView(app.id, 'https://mail.google.com/mail/u/0/', `persist:${app.id}`).catch(() => {})
+  window.yukiAPI.openView(app.id, 'https://mail.google.com/mail/u/0/', `persist:${app.id}`).catch(() => { })
   switchTo(app.id)
   showToast('Sesion iniciada — cargando Gmail...', 3000)
 })
@@ -814,23 +868,23 @@ window.yukiAPI.on('switch-app-index', (index) => {
 })
 
 window.yukiAPI.on('open-webview-devtools', () => {
-  if (activeId) window.yukiAPI.openDevTools(activeId).catch(() => {})
+  if (activeId) window.yukiAPI.openDevTools(activeId).catch(() => { })
 })
 
 // ── Iconos por defecto ────────────────────────────────────────────────────────
 const DEFAULT_ICONS = {
   whatsapp: { file: '../../icons/wired-flat-2543-logo-whatsapp-hover-pinch.apng', elId: 'cat-icon-whatsapp' },
-  gmail:    { file: '../../icons/wired-flat-3090-document-letter-hover-pinch.apng', elId: 'cat-icon-gmail' },
+  gmail: { file: '../../icons/wired-flat-3090-document-letter-hover-pinch.apng', elId: 'cat-icon-gmail' },
 }
 const loadedIcons = {}
 
 async function loadDefaultIcons() {
   for (const [key, { file, elId }] of Object.entries(DEFAULT_ICONS)) {
     try {
-      const res  = await fetch(file)
+      const res = await fetch(file)
       if (!res.ok) continue
       const blob = await res.blob()
-      const b64  = await new Promise(resolve => {
+      const b64 = await new Promise(resolve => {
         const reader = new FileReader()
         reader.onload = e => resolve(e.target.result)
         reader.readAsDataURL(blob)
@@ -840,7 +894,7 @@ async function loadDefaultIcons() {
       if (el) el.innerHTML = `<img src="${b64}" style="width:28px;height:28px;object-fit:contain;" />`
       const item = document.querySelector(`[data-icon-key="${key}"]`)
       if (item) item.dataset.icon = b64
-    } catch(e) {}
+    } catch (e) { }
   }
 }
 
@@ -866,7 +920,7 @@ async function migratePinFromStorage() {
       localStorage.setItem('yuki-lock', JSON.stringify({ enabled: !!lockData.enabled }))
       console.log('[Yuki] PIN migrado a almacenamiento seguro')
     }
-  } catch(e) { console.warn('[Yuki] PIN migration error:', e) }
+  } catch (e) { console.warn('[Yuki] PIN migration error:', e) }
 }
 
 async function tryRestoreFromDisk() {
@@ -874,11 +928,11 @@ async function tryRestoreFromDisk() {
     if (loadApps().length > 0) return
     const data = await window.yukiAPI.readAutosave()
     if (!data || data.version !== 1) return
-    if (data.apps     && data.apps.length > 0)              localStorage.setItem(STORAGE_KEY,  JSON.stringify(data.apps))
+    if (data.apps && data.apps.length > 0) localStorage.setItem(STORAGE_KEY, JSON.stringify(data.apps))
     if (data.settings && Object.keys(data.settings).length) localStorage.setItem(SETTINGS_KEY, JSON.stringify(data.settings))
     if (data.customSound) localStorage.setItem('yuki-custom-sound', data.customSound)
     console.log('[Yuki] config restaurada desde autosave')
-  } catch(e) { console.warn('[Yuki] tryRestoreFromDisk error:', e) }
+  } catch (e) { console.warn('[Yuki] tryRestoreFromDisk error:', e) }
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
@@ -901,14 +955,14 @@ async function init() {
 }
 
 init().catch(e => { console.error('[Yuki] init error:', e); render() })
-(function() {
+
+// ── Lucide icons: re-render al cambiar el DOM ────────────────────────────────
+;(function () {
   const observer = new MutationObserver(() => {
-    if (window.lucide) {
-      window.lucide.createIcons();
-    }
-  });
-  observer.observe(document.body, { childList: true, subtree: true });
+    if (window.lucide) window.lucide.createIcons()
+  })
+  observer.observe(document.body, { childList: true, subtree: true })
   window.addEventListener('load', () => {
-    if (window.lucide) window.lucide.createIcons();
-  });
-})();
+    if (window.lucide) window.lucide.createIcons()
+  })
+})()

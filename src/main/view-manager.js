@@ -24,7 +24,6 @@ class ViewManager {
       height: Math.max(Math.floor(h - 40 - 12), 100),
     }
   }
-  }
 
   create(id, url, partition) {
     if (this.views.has(id)) return
@@ -34,6 +33,9 @@ class ViewManager {
 
     ses.setPermissionRequestHandler((_, permission, callback) => {
       callback(!['midi', 'midiSysex'].includes(permission))
+    })
+    ses.setPermissionCheckHandler((_, permission) => {
+      return !['midi', 'midiSysex'].includes(permission)
     })
 
     const view = new WebContentsView({
@@ -46,7 +48,7 @@ class ViewManager {
       },
     })
 
-    this.views.set(id, { view, url, visible: false, sleeping: false, sleepUrl: null })
+    this.views.set(id, { view, url, visible: false, sleeping: false, sleepUrl: null, sleepable: false })
     this._attachListeners(view, id)
     view.webContents.loadURL(url)
   }
@@ -130,13 +132,12 @@ class ViewManager {
     entry.url = url
   }
 
-  resizeAll(leftOffset = 72) {
+  resizeAll(leftOffset = 72, rightCrop = 12) {
     const [w, h] = this.win.getContentSize()
     const bounds = {
       x: Math.floor(leftOffset),
       y: 40,
-      y: 40,
-      width: Math.max(Math.floor(w - leftOffset - 12), 100),
+      width: Math.max(Math.floor(w - leftOffset - rightCrop), 100),
       height: Math.max(Math.floor(h - 40 - 12), 100),
     }
     for (const entry of this.views.values()) {
@@ -144,9 +145,24 @@ class ViewManager {
     }
   }
 
+  async captureActive() {
+    if (!this._activeId) return null
+    const entry = this.views.get(this._activeId)
+    if (!entry || entry.sleeping) return null
+    try {
+      const image = await entry.view.webContents.capturePage()
+      return image.toDataURL()
+    } catch(e) { return null }
+  }
+
   openDevTools(id) {
     const entry = this.views.get(id)
     if (entry) entry.view.webContents.openDevTools()
+  }
+
+  setSleepable(id, value) {
+    const entry = this.views.get(id)
+    if (entry) entry.sleepable = !!value
   }
 
   setAutoSleepMinutes(minutes) {
@@ -184,6 +200,7 @@ class ViewManager {
     for (const [id, entry] of this.views) {
       if (id === this._activeId) continue
       if (entry.sleeping) continue
+      if (!entry.sleepable) continue  // respetar el toggle del usuario
       const lastActive = this._lastActive.get(id) || 0
       if (now - lastActive > this._autoSleepMs) {
         this.sleep(id)
@@ -265,6 +282,51 @@ class ViewManager {
         '[data-testid="app-download-banner"],[data-testid="banner-container"],' +
         'a[href*="whatsapp.com/dl"],div:has(>a[href*="whatsapp.com/dl"]){display:none!important}'
       ).catch(() => {})
+    }
+    if (url.includes('mail.google.com')) {
+      // Suprimir el error 2002 de Gmail (Locksmith / SW sync failure):
+      // - Auto-click en dialogs de error
+      // - Ocultar el banner superior "N.º 2002"
+      view.webContents.executeJavaScript(`
+        (function() {
+          const ERROR_RE = /N\\.\\u00ba\\s*2002|n\\.\\u00b0\\s*2002/i
+
+          const dismissDialogs = () => {
+            document.querySelectorAll('[role="dialog"],[role="alertdialog"]').forEach(d => {
+              if (/2002|se produjo un error|error occurred/i.test(d.textContent)) {
+                d.querySelectorAll('button').forEach(b => {
+                  if (/^(aceptar|accept|ok)$/i.test(b.textContent.trim())) b.click()
+                })
+              }
+            })
+          }
+
+          const hideBanner = () => {
+            // Busca el banner delgado en la parte superior que contiene "N.º 2002"
+            const walk = (root) => {
+              for (const el of root.querySelectorAll('*')) {
+                if (el.children.length > 0) continue
+                if (!ERROR_RE.test(el.textContent)) continue
+                // Sube por el árbol hasta encontrar el contenedor del banner
+                let node = el.parentElement
+                while (node && node !== document.body) {
+                  const r = node.getBoundingClientRect()
+                  if (r.width > 200 && r.height > 0 && r.height < 60) {
+                    node.style.setProperty('display', 'none', 'important')
+                    return
+                  }
+                  node = node.parentElement
+                }
+              }
+            }
+            walk(document)
+          }
+
+          const handle = () => { dismissDialogs(); hideBanner() }
+          new MutationObserver(handle).observe(document.documentElement, { childList: true, subtree: true })
+          handle()
+        })()
+      `).catch(() => {})
     }
   }
 }

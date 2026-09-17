@@ -24,6 +24,18 @@
       <div class="spinner"></div>
       <div class="loading-label" id="loading-label">Cargando...</div>
     </div>
+    <!-- Capa 1: blur + dim (SIN el logo adentro) -->
+    <div id="settings-content-overlay">
+      <div id="settings-overlay-blur"></div>
+      <div id="settings-overlay-dim"></div>
+    </div>
+    <!-- Capa 2: logo/texto — hermano separado, z-index mayor, sin blur que lo afecte -->
+    <div id="settings-overlay-content">
+      <img src="../../icons/icon.png" alt="Yuki" id="settings-overlay-logo" onerror="this.style.display='none';document.getElementById('settings-overlay-fallback').style.display='block'" />
+      <div id="settings-overlay-fallback" style="display:none;font-size:64px">🌸</div>
+      <div id="settings-overlay-name">Yuki</div>
+      <div id="settings-overlay-hint">Configura tus apps</div>
+    </div>
   </div>
 
   <!-- File inputs ocultos -->
@@ -46,7 +58,12 @@
       <div class="panel-header">
         <span style="font-size:20px"><i data-lucide="settings" class="icon-lucide"></i></span>
         <h2>Configuracion de Apps</h2>
-        <button id="settings-close-btn" class="icon-btn" title="Cerrar" aria-label="Cerrar"  ><i data-lucide="x" class="icon-lucide"></i></button>
+        <div class="panel-header-actions">
+          <button id="btn-hide-window" class="icon-btn" title="Minimizar a la bandeja" aria-label="Minimizar"><i data-lucide="minus" class="icon-lucide"></i></button>
+          <button id="btn-quit-app" class="icon-btn danger" title="Cerrar y salir" aria-label="Cerrar y salir"><i data-lucide="power" class="icon-lucide"></i></button>
+          <div class="panel-header-sep"></div>
+          <button id="settings-close-btn" class="icon-btn" title="Cerrar panel" aria-label="Cerrar"><i data-lucide="x" class="icon-lucide"></i></button>
+        </div>
       </div>
 
       <div class="panel-body">
@@ -217,7 +234,7 @@
 
         <div class="catalog-section-label">Mensajería</div>
         <div class="catalog-grid" id="catalog-grid">
-          <div class="catalog-item" role="button" tabindex="0" data-name="WhatsApp" data-icon="lucide:message-circle" data-url="https://web.whatsapp.com">
+          <div class="catalog-item" role="button" tabindex="0" data-name="WhatsApp" data-icon-key="whatsapp" data-icon="lucide:message-circle" data-url="https://web.whatsapp.com">
             <div class="icon" id="cat-icon-whatsapp"><i data-lucide="message-circle" class="icon-lucide"></i></div><div class="name">WhatsApp</div>
           </div>
           <div class="catalog-item" role="button" tabindex="0" data-name="Telegram" data-icon="lucide:send" data-url="https://web.telegram.org/k/">
@@ -254,7 +271,7 @@
 
         <div class="catalog-section-label">Email</div>
         <div class="catalog-grid">
-          <div class="catalog-item" role="button" tabindex="0" data-name="Gmail" data-icon="lucide:mail" data-url="https://mail.google.com/mail/u/0/">
+          <div class="catalog-item" role="button" tabindex="0" data-name="Gmail" data-icon-key="gmail" data-icon="lucide:mail" data-url="https://mail.google.com/mail/u/0/">
             <div class="icon" id="cat-icon-gmail"><i data-lucide="mail" class="icon-lucide"></i></div><div class="name">Gmail</div>
           </div>
           <div class="catalog-item" role="button" tabindex="0" data-name="Outlook" data-icon="lucide:mail" data-url="https://outlook.live.com/mail/">
