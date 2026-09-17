@@ -13,7 +13,10 @@ const ALWAYS_ALLOW = new Set([
   'background-sync', 'idle-detection', 'window-management', 'storage-access',
   'top-level-storage-access', 'persistent-storage', 'keyboardLock', 'pointerLock',
 ])
-const ALWAYS_DENY = new Set(['midi', 'midiSysex', 'hid', 'serial', 'usb', 'openExternal'])
+const ALWAYS_DENY = new Set(['midi', 'midiSysex', 'hid', 'serial', 'usb'])
+// openExternal = links mailto:/tel: → los abre el sistema, era el comportamiento
+// anterior. fileSystem = showSaveFilePicker() (descargar adjuntos desde la app).
+ALWAYS_ALLOW.add('openExternal'); ALWAYS_ALLOW.add('fileSystem')
 const ASK = new Set(['media', 'geolocation', 'display-capture', 'mediaKeySystem', 'speaker-selection'])
 
 const LABELS = {
@@ -68,6 +71,8 @@ async function ask(win, origin, permission, details) {
   return p
 }
 
+// Electron entrega requestingOrigin como 'https://host/' (con barra) y el
+// request handler guarda 'https://host' (URL.origin): normalizar siempre.
 function originOf(wc, requestingUrl) {
   try { return new URL(requestingUrl || wc.getURL()).origin } catch { return 'desconocido' }
 }
@@ -88,7 +93,7 @@ function attach(ses, win) {
   ses.setPermissionCheckHandler((wc, permission, requestingOrigin) => {
     if (ALWAYS_ALLOW.has(permission)) return true
     if (ALWAYS_DENY.has(permission)) return false
-    const saved = load()[key(requestingOrigin || originOf(wc), permission)]
+    const saved = load()[key(originOf(wc, requestingOrigin), permission)]
     return saved === true
   })
 }

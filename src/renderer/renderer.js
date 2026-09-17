@@ -80,12 +80,14 @@ async function tryUnlock(pin) {
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
+// Toast normal. El aviso de actualización usa un elemento aparte (#toast-update)
+// para que ninguno de los dos tape o descarte al otro.
 function showToast(msg, duration = 2000) {
   const t = document.getElementById('toast')
-  if (t.classList.contains('sticky')) return   // no pisar el aviso de actualización
   t.textContent = msg
   t.classList.add('show')
-  setTimeout(() => t.classList.remove('show'), duration)
+  clearTimeout(showToast._timer)
+  showToast._timer = setTimeout(() => t.classList.remove('show'), duration)
 }
 
 // ── Escape HTML ───────────────────────────────────────────────────────────────
@@ -922,9 +924,9 @@ window.yukiAPI.on('yuki-window-show', () => {
 // Actualización descargada (electron-updater): el usuario decide cuándo reiniciar.
 // Si no lo hace, se instala sola al cerrar Yuki.
 window.yukiAPI.on('update:ready', ({ version }) => {
-  const t = document.getElementById('toast')
+  const t = document.getElementById('toast-update')
   t.innerHTML = `Yuki ${esc(version)} lista · <button id="toast-update-btn">Reiniciar ahora</button>`
-  t.classList.add('show', 'sticky')
+  t.classList.add('show')
   document.getElementById('toast-update-btn').addEventListener('click', () => window.yukiAPI.installUpdate())
 })
 
