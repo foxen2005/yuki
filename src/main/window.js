@@ -45,12 +45,23 @@ function createWindow() {
     }
   })
 
-  win.on('resize', () => {
-    // Notificado a view-manager a través de la referencia directa al objeto
-    if (win._viewManager) win._viewManager.resizeAll()
-  })
+  // El resize lo maneja ViewManager (win.on('resize') en su constructor);
+  // antes estaba duplicado aquí y pisaba el layout con el offset por defecto.
+
+  // Restaurar desde la barra de tareas también debe pasar por el lock
+  win.on('restore', () => win.webContents.send('yuki-window-show'))
 
   return win
+}
+
+// Única forma de traer la ventana al frente: restaura si está minimizada y
+// avisa al renderer (que muestra el lock si está habilitado)
+function showMain(mainWin) {
+  if (!mainWin || mainWin.isDestroyed()) return
+  if (mainWin.isMinimized()) mainWin.restore()
+  mainWin.show()
+  mainWin.focus()
+  mainWin.webContents.send('yuki-window-show')
 }
 
 function createTray(mainWin) {
@@ -70,19 +81,19 @@ function createTray(mainWin) {
   tray.setToolTip('Yuki')
 
   const contextMenu = Menu.buildFromTemplate([
-    { label: 'Abrir Yuki', click: () => { mainWin.show(); mainWin.focus() } },
+    { label: 'Abrir Yuki', click: () => showMain(mainWin) },
     { type: 'separator' },
     { label: 'Salir', click: () => { app.isQuiting = true; app.quit() } },
   ])
   tray.setContextMenu(contextMenu)
 
   tray.on('click', () => {
-    if (mainWin.isVisible()) {
+    // isVisible() es true para una ventana minimizada en Windows: hay que
+    // comprobar isMinimized() o el click la escondía en vez de restaurarla
+    if (mainWin.isVisible() && !mainWin.isMinimized()) {
       mainWin.hide()
     } else {
-      mainWin.show()
-      mainWin.focus()
-      mainWin.webContents.send('yuki-window-show')
+      showMain(mainWin)
     }
   })
 
@@ -109,4 +120,4 @@ function registerShortcuts(mainWin) {
 
 function getWin() { return win }
 
-module.exports = { createWindow, createTray, registerShortcuts, bindAppSwitchKeys, getWin }
+module.exports = { createWindow, createTray, registerShortcuts, bindAppSwitchKeys, getWin, showMain }

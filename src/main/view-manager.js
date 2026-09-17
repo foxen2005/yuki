@@ -11,17 +11,22 @@ class ViewManager {
     this._activeId = null
     this._autoSleepMs = 30 * 60 * 1000
     this._monitorInterval = null
+    // Layout vigente pedido por el renderer (72 = normal; 9999 = vistas ocultas
+    // porque settings o el lock están abiertos). Se recuerda para que activate()
+    // y el resize de la ventana no devuelvan la vista encima del panel.
+    this._layout = { leftOffset: 72, rightCrop: 12 }
 
     win.on('resize', () => this.resizeAll())
     win._viewManager = this
   }
 
-    getViewBounds() {
+  getViewBounds() {
     const [w, h] = this.win.getContentSize()
+    const { leftOffset, rightCrop } = this._layout
     return {
-      x: 72,
+      x: Math.floor(leftOffset),
       y: 40,
-      width: Math.max(Math.floor(w - 72 - 12), 100),
+      width: Math.max(Math.floor(w - leftOffset - rightCrop), 100),
       height: Math.max(Math.floor(h - 40 - 12), 100),
     }
   }
@@ -123,7 +128,22 @@ class ViewManager {
   reload(id) {
     const entry = this.views.get(id)
     if (!entry) return
+    if (entry.sleeping) {
+      // Dormida = about:blank; recargar eso no sirve. Se despierta (oculta).
+      entry.view.webContents.loadURL(entry.sleepUrl || entry.url)
+      entry.sleeping = false
+      entry.sleepUrl = null
+      return
+    }
     entry.view.webContents.reload()
+  }
+
+  // Tras limpiar la sesión: volver a la URL base para que la página suelte el
+  // estado en memoria (un reload conserva la SPA logueada)
+  restart(id) {
+    const entry = this.views.get(id)
+    if (!entry || entry.sleeping) return
+    entry.view.webContents.loadURL(entry.url)
   }
 
   navigate(id, url) {
@@ -133,14 +153,10 @@ class ViewManager {
     entry.url = url
   }
 
-  resizeAll(leftOffset = 72, rightCrop = 12) {
-    const [w, h] = this.win.getContentSize()
-    const bounds = {
-      x: Math.floor(leftOffset),
-      y: 40,
-      width: Math.max(Math.floor(w - leftOffset - rightCrop), 100),
-      height: Math.max(Math.floor(h - 40 - 12), 100),
-    }
+  // Sin argumentos (resize de ventana) reaplica el layout vigente
+  resizeAll(leftOffset, rightCrop) {
+    if (leftOffset !== undefined) this._layout = { leftOffset, rightCrop: rightCrop ?? 12 }
+    const bounds = this.getViewBounds()
     for (const entry of this.views.values()) {
       if (entry.visible) entry.view.setBounds(bounds)
     }
@@ -182,7 +198,8 @@ class ViewManager {
           report.push({ id, privateMB: Math.round(info.private / 1024) })
         } catch(e) {}
       }
-      if (report.length > 0 && !this.win.isDestroyed()) {
+      // Enviar también vacío para que la lista muestre 'Sin apps activas'
+      if (!this.win.isDestroyed()) {
         this.win.webContents.send('view:memory-report', report)
       }
     }, intervalMs)
@@ -291,6 +308,10 @@ class ViewManager {
       // - Ocultar el banner superior "N.º 2002"
       view.webContents.executeJavaScript(`
         (function() {
+          // Guard: did-stop-loading se dispara varias veces por sesión; sin esto
+          // se acumulaban observers que recorrían todo el DOM en cada mutación
+          if (window.__yukiGmail2002) return
+          window.__yukiGmail2002 = true
           const ERROR_RE = /N\\.\\u00ba\\s*2002|n\\.\\u00b0\\s*2002/i
 
           const dismissDialogs = () => {
@@ -325,7 +346,14 @@ class ViewManager {
           }
 
           const handle = () => { dismissDialogs(); hideBanner() }
-          new MutationObserver(handle).observe(document.documentElement, { childList: true, subtree: true })
+          // Coalescer ráfagas de mutaciones en una sola pasada por frame
+          let scheduled = false
+          const schedule = () => {
+            if (scheduled) return
+            scheduled = true
+            requestAnimationFrame(() => { scheduled = false; handle() })
+          }
+          new MutationObserver(schedule).observe(document.documentElement, { childList: true, subtree: true })
           handle()
         })()
       `).catch(() => {})

@@ -49,6 +49,8 @@ function registerHandlers({ win, viewManager }) {
       await ses.clearStorageData()
       await ses.clearCache()
       const appId = partition.replace(/^persist:/, '')
+      // openView/switchTo no recargan una vista viva: hay que volver a la URL base
+      viewManager.restart(appId)
       event.sender.send('session:cleared', { id: appId })
       return { ok: true }
     } catch(e) {

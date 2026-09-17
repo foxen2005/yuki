@@ -39,12 +39,28 @@ function saveLock(s) { localStorage.setItem('yuki-lock', JSON.stringify(s)) }
 function showLock() {
   const overlay = document.getElementById('lock-overlay')
   overlay.classList.add('visible')
+  // La vista nativa se dibuja sobre el DOM: sin esto el lock quedaba tapado
+  // y la app seguía visible y clickeable
+  syncViewLayout()
   const inp = document.getElementById('lock-pin-input')
   inp.value = ''
   setTimeout(() => inp.focus(), 80)
 }
 function hideLock() {
   document.getElementById('lock-overlay').classList.remove('visible')
+  syncViewLayout()
+}
+
+// ── Layout de las vistas nativas ──────────────────────────────────────────────
+// Único punto que decide si las WebContentsViews se ven o se empujan fuera de
+// pantalla. Cualquier capa DOM que deba quedar encima (lock, settings) se
+// declara aquí en vez de llamar resizeViews() por su cuenta.
+function viewsShouldHide() {
+  return document.getElementById('lock-overlay').classList.contains('visible')
+    || document.getElementById('settings-overlay').classList.contains('open')
+}
+function syncViewLayout() {
+  window.yukiAPI.resizeViews(viewsShouldHide() ? 9999 : 72, 12).catch(() => { })
 }
 
 async function tryUnlock(pin) {
@@ -71,11 +87,17 @@ function showToast(msg, duration = 2000) {
   setTimeout(() => t.classList.remove('show'), duration)
 }
 
+// ── Escape HTML ───────────────────────────────────────────────────────────────
+// Nombres/URLs vienen del usuario o de un backup importado: nunca a innerHTML crudos
+function esc(str) {
+  return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+}
+
 // ── Render icon ───────────────────────────────────────────────────────────────
 function renderIconHTML(icon) {
   if (icon && icon.startsWith('data:image')) return `<img src="${icon}" alt="" aria-hidden="true" />`
-  if (icon && icon.startsWith('lucide:')) return `<i data-lucide="${icon.split(':')[1]}" class="icon-lucide"></i>`;
-  return icon || '<i data-lucide="globe" class="icon-lucide"></i>'
+  if (icon && icon.startsWith('lucide:')) return `<i data-lucide="${esc(icon.split(':')[1])}" class="icon-lucide"></i>`
+  return icon ? esc(icon) : '<i data-lucide="globe" class="icon-lucide"></i>'
 }
 
 // ── Loading overlay ───────────────────────────────────────────────────────────
@@ -100,16 +122,6 @@ function updateBadge(appId, count) {
 }
 function clearBadge(appId) { updateBadge(appId, 0) }
 
-// ── Sleep mode ────────────────────────────────────────────────────────────────
-function sleepInactive() {
-  const apps = loadApps()
-  apps.forEach(app => {
-    if (app.sleep && app.id !== activeId && createdViews.has(app.id)) {
-      window.yukiAPI.sleepView(app.id).catch(() => { })
-    }
-  })
-}
-
 // ── Navegación ────────────────────────────────────────────────────────────────
 function switchTo(id) {
   const mainContainer = document.getElementById('content');
@@ -128,6 +140,8 @@ function switchTo(id) {
 
   // Crear vista la primera vez que se abre
   if (!createdViews.has(id)) {
+    // Solo aquí: una vista ya viva no emite did-stop-loading y el spinner quedaba pegado
+    showLoading(app.name)
     window.yukiAPI.openView(id, app.url, `persist:${id}`).catch(e => console.error('[Yuki] openView:', e))
     createdViews.add(id)
   } else {
@@ -153,11 +167,8 @@ function switchTo(id) {
   clearBadge(id)
   badgeCounts[id] = 0
 
-  // Mostrar loading si la vista está cargando
-  showLoading(app.name)
-
-  // Dormir inactivas con sleep activado
-  setTimeout(sleepInactive, 5000)
+  // El auto-sleep lo decide el proceso main según los minutos configurados y
+  // el toggle por app; antes se forzaba aquí a los 5 s ignorando el ajuste.
 }
 
 // ── Render sidebar ────────────────────────────────────────────────────────────
@@ -180,11 +191,11 @@ function render() {
     item.className = 'app-item'
     item.innerHTML = `
       <button class="app-btn ${activeId === app.id ? 'active' : ''}"
-              data-id="${app.id}" title="${app.name}" aria-label="${app.name}">
+              data-id="${app.id}" title="${esc(app.name)}" aria-label="${esc(app.name)}">
         ${renderIconHTML(app.icon)}
         <span class="badge" id="badge-${app.id}"></span>
       </button>
-      <div class="app-label">${app.name}</div>
+      <div class="app-label">${esc(app.name)}</div>
     `
     item.querySelector('.app-btn').addEventListener('click', () => switchTo(app.id))
 
@@ -254,17 +265,17 @@ function renderServicesList(apps) {
         </div>
         <div class="service-info">
           <div class="svc-name-wrap">
-            <span class="svc-name" title="Click para renombrar">${app.name}</span>
-            <input class="svc-name-input" type="text" value="${app.name}" style="display:none" />
+            <span class="svc-name" title="Click para renombrar">${esc(app.name)}</span>
+            <input class="svc-name-input" type="text" value="${esc(app.name)}" style="display:none" />
           </div>
-          <div class="svc-url">${app.url}</div>
+          <div class="svc-url">${esc(app.url)}</div>
         </div>
       </div>
       <div class="service-actions">
         <div class="sleep-toggle-wrap" title="Sleep: hiberna esta app cuando no está activa para ahorrar RAM">
           <span class="sleep-label"><i data-lucide="moon" class="icon-lucide"></i> Sleep</span>
           <label class="toggle">
-            <input type="checkbox" class="sleep-checkbox" aria-label="Habilitar hibernación para ${app.name}" ${app.sleep ? 'checked' : ''} />
+            <input type="checkbox" class="sleep-checkbox" aria-label="Habilitar hibernación para ${esc(app.name)}" ${app.sleep ? 'checked' : ''} />
             <span class="toggle-slider"></span>
           </label>
         </div>
@@ -328,7 +339,14 @@ function renderServicesList(apps) {
     nameInput.addEventListener('blur', commitRename)
     nameInput.addEventListener('keydown', e => {
       if (e.key === 'Enter') { e.preventDefault(); commitRename() }
-      if (e.key === 'Escape') { renaming = true; nameInput.value = app.name; nameSpan.style.display = ''; nameInput.style.display = 'none'; nameInput.blur() }
+      if (e.key === 'Escape') {
+        // blur() dispara commitRename de forma síncrona; el flag lo bloquea y se
+        // libera después (antes quedaba en true y el siguiente rename no hacía nada)
+        renaming = true
+        nameInput.value = app.name; nameSpan.style.display = ''; nameInput.style.display = 'none'
+        nameInput.blur()
+        renaming = false
+      }
     })
 
     // Mover arriba / abajo
@@ -364,9 +382,10 @@ function renderServicesList(apps) {
 
     // Reload
     card.querySelector('.reload-btn').addEventListener('click', () => {
-      showLoading(app.name)
+      // No se llama switchTo(): con el panel abierto traería la vista encima
       window.yukiAPI.reloadView(app.id).catch(() => { })
-      switchTo(app.id)
+      if (createdViews.has(app.id)) showToast(`Recargando ${app.name}`)
+      else switchTo(app.id)
     })
 
     // Limpiar sesión
@@ -469,9 +488,11 @@ function resizeImage(dataUrl, size, callback) {
 // el ancho de las vistas recortando por la derecha en lugar de mover el borde izquierdo.
 const SETTINGS_WIDTH = 400
 
+let settingsOpenToken = 0
 async function openSettingsPanel() {
   renderServicesList(loadApps())
   if (window.lucide) window.lucide.createIcons()
+  const token = ++settingsOpenToken
 
   const overlay = document.getElementById('settings-content-overlay')
 
@@ -488,8 +509,12 @@ async function openSettingsPanel() {
     if (blurDiv) blurDiv.style.backgroundImage = 'none'
   }
 
+  // Si el usuario cerró el panel mientras esperábamos el capture, no
+  // reabrir las capas ni esconder las vistas (quedaban fuera de pantalla)
+  if (token !== settingsOpenToken || !document.getElementById('settings-overlay').classList.contains('open')) return
+
   // Ocultar la vista nativa y mostrar ambas capas
-  window.yukiAPI.resizeViews(9999, 12)
+  syncViewLayout()
   const content = document.getElementById('settings-overlay-content')
   overlay.style.display = 'block'
   content.style.display = 'flex'
@@ -506,7 +531,8 @@ function toggleSettings() {
   if (!isOpen) {
     openSettingsPanel()
   } else {
-    window.yukiAPI.resizeViews(72, 12)
+    settingsOpenToken++
+    syncViewLayout()
     const overlay = document.getElementById('settings-content-overlay')
     const content = document.getElementById('settings-overlay-content')
     overlay.classList.remove('visible')
@@ -517,7 +543,8 @@ function toggleSettings() {
 function closeSettings() {
   document.getElementById('settings-overlay').classList.remove('open')
   document.getElementById('settings-toggle').classList.remove('open')
-  window.yukiAPI.resizeViews(72, 12)
+  settingsOpenToken++
+  syncViewLayout()
   const overlay = document.getElementById('settings-content-overlay')
   const content = document.getElementById('settings-overlay-content')
   overlay.classList.remove('visible')
@@ -588,11 +615,14 @@ function updateMemoryUI(report) {
     const icon = app ? renderIconHTML(app.icon) : '🌐'
     return `<div class="memory-item">
       <span style="font-size:14px">${icon}</span>
-      <span class="memory-app-name">${name}</span>
+      <span class="memory-app-name">${esc(name)}</span>
       <span class="memory-mb">${privateMB} MB</span>
-      <button class="icon-btn" onclick="window.yukiAPI.sleepView('${id}')" title="Liberar memoria"><i data-lucide="moon" class="icon-lucide"></i></button>
+      <button class="icon-btn memory-sleep-btn" data-id="${esc(id)}" title="Liberar memoria"><i data-lucide="moon" class="icon-lucide"></i></button>
     </div>`
   }).join('')
+  list.querySelectorAll('.memory-sleep-btn').forEach(btn => {
+    btn.addEventListener('click', () => window.yukiAPI.sleepView(btn.dataset.id).catch(() => { }))
+  })
   if (window.lucide) window.lucide.createIcons()
 }
 
@@ -791,7 +821,14 @@ function hideGoogleAuthBanner() {
       const { data } = res
       if (!data || data.version !== 1) { showToast('Archivo de backup no válido', 3000); return }
       try {
-        if (data.apps) localStorage.setItem(STORAGE_KEY, JSON.stringify(data.apps))
+        if (Array.isArray(data.apps)) {
+          // Los ids se usan en selectores, atributos y nombres de partition:
+          // un backup editado a mano no debe poder colar caracteres arbitrarios
+          const clean = data.apps
+            .filter(a => a && typeof a.url === 'string')
+            .map(a => ({ ...a, id: String(a.id || a.name || 'app').toLowerCase().replace(/[^a-z0-9-]/g, '-'), name: String(a.name || a.id || 'App') }))
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(clean))
+        }
         if (data.settings) localStorage.setItem(SETTINGS_KEY, JSON.stringify(data.settings))
         if (data.customSound) localStorage.setItem('yuki-custom-sound', data.customSound)
         showToast('Configuración restaurada', 2500)
@@ -848,12 +885,9 @@ window.yukiAPI.on('view:memory-report', (report) => {
 })
 
 window.yukiAPI.on('session:cleared', ({ id }) => {
-  const allApps = loadApps()
-  const app = allApps.find(a => a.id === id)
-  if (app) {
-    window.yukiAPI.openView(id, app.url, `persist:${id}`).catch(() => { })
-    switchTo(id)
-  }
+  const app = loadApps().find(a => a.id === id)
+  // El main ya volvió a cargar la URL base (viewManager.restart); no se cambia
+  // de app para no tapar el panel de settings desde donde se limpió
   showToast(`Sesión de ${app ? app.name : id} limpiada`, 2500)
 })
 

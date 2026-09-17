@@ -1,6 +1,6 @@
 const { app, session } = require('electron')
 const { spoofSession } = require('./session-manager')
-const { createWindow, createTray, registerShortcuts, getWin } = require('./window')
+const { createWindow, createTray, registerShortcuts, getWin, showMain } = require('./window')
 const ViewManager = require('./view-manager')
 const { registerHandlers } = require('./ipc-handlers')
 const { setupAutosave } = require('./autosave')
@@ -14,13 +14,7 @@ if (!gotLock) {
 }
 
 // Si el usuario intenta abrir una segunda instancia, enfocar la existente
-app.on('second-instance', () => {
-  const win = getWin()
-  if (!win) return
-  if (win.isMinimized()) win.restore()
-  win.show()
-  win.focus()
-})
+app.on('second-instance', () => showMain(getWin()))
 
 app.setAppUserModelId('com.yuki.app')
 app.commandLine.appendSwitch('disable-blink-features', 'AutomationControlled')

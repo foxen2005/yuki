@@ -518,3 +518,30 @@ body {
   stroke-linejoin: round;
   fill: none;
 }
+
+/* ── Franja superior (40px) ──────────────────────────────────────────────────
+   Es la única zona del DOM que la WebContentsView nativa no cubre (la vista
+   empieza en y=40). Toast y banner de Google viven aquí; en cualquier otro
+   sitio quedaban debajo de la vista y no se veían (o no se podían clickear). */
+#toast {
+  top: 5px; bottom: auto;
+  transform: translateX(-50%) translateY(-10px);
+  padding: 6px 16px; font-size: 12px; border-radius: 15px;
+}
+#toast.show { transform: translateX(-50%) translateY(0); }
+
+#google-auth-banner {
+  /* right:160px deja libres los botones nativos min/max/cerrar (titleBarOverlay) */
+  position: fixed; top: 0; left: 72px; right: 160px; height: 40px;
+  z-index: 3000; -webkit-app-region: no-drag;
+}
+#google-auth-banner-inner {
+  height: 100%; display: flex; align-items: center; gap: 10px; padding: 0 12px;
+  background: var(--bg-card); border-bottom: 1px solid var(--border-color);
+}
+#google-auth-banner-inner > div > div:last-child { display: none; } /* 2ª línea no cabe en 40px */
+#google-auth-btn {
+  background: var(--primary); color: white; border: none; border-radius: var(--radius-sm);
+  padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+#google-auth-btn:hover { background: var(--primary-hover); }
