@@ -231,6 +231,9 @@ function render() {
   }
 
   renderServicesList(apps)
+  // Cubre también el caso sin apps (renderServicesList sale temprano) y los
+  // íconos estáticos del shell (engranaje del sidebar) en el primer render
+  if (window.lucide) window.lucide.createIcons()
 }
 
 // ── Settings list ─────────────────────────────────────────────────────────────
@@ -584,6 +587,7 @@ function updateMemoryUI(report) {
       <button class="icon-btn" onclick="window.yukiAPI.sleepView('${id}')" title="Liberar memoria"><i data-lucide="moon" class="icon-lucide"></i></button>
     </div>`
   }).join('')
+  if (window.lucide) window.lucide.createIcons()
 }
 
 // ── Google Auth Banner ────────────────────────────────────────────────────────
@@ -909,6 +913,21 @@ function migrateUrls() {
   if (changed) saveApps(apps)
 }
 
+// Lucide eliminó los íconos de marca; apps guardadas con esos nombres quedaban en blanco
+function migrateBrandIcons() {
+  const map = {
+    'lucide:facebook':  'lucide:message-circle-more',
+    'lucide:instagram': 'lucide:camera',
+    'lucide:twitter':   'lucide:at-sign',
+    'lucide:linkedin':  'lucide:briefcase',
+    'lucide:github':    'lucide:code',
+  }
+  const apps = loadApps()
+  let changed = false
+  apps.forEach(app => { if (map[app.icon]) { app.icon = map[app.icon]; changed = true } })
+  if (changed) saveApps(apps)
+}
+
 async function migratePinFromStorage() {
   try {
     const lockData = JSON.parse(localStorage.getItem('yuki-lock') || '{}')
@@ -942,6 +961,10 @@ async function init() {
     migrateUrls()
     localStorage.setItem('yuki-version', '0.2.0')
   }
+  if (!localStorage.getItem('yuki-icons-migrated')) {
+    migrateBrandIcons()
+    localStorage.setItem('yuki-icons-migrated', '1')
+  }
 
   // Inicializar auto-sleep en el proceso principal
   const autoSleepMinutes = loadSettings().autoSleepMinutes ?? 30
@@ -952,14 +975,3 @@ async function init() {
 }
 
 init().catch(e => { console.error('[Yuki] init error:', e); render() })
-
-// ── Lucide icons: re-render al cambiar el DOM ────────────────────────────────
-;(function () {
-  const observer = new MutationObserver(() => {
-    if (window.lucide) window.lucide.createIcons()
-  })
-  observer.observe(document.body, { childList: true, subtree: true })
-  window.addEventListener('load', () => {
-    if (window.lucide) window.lucide.createIcons()
-  })
-})()
