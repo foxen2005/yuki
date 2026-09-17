@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yuki — todas tus apps web en una ventana</title>
+<meta name="description" content="Yuki es un cliente de escritorio para Windows que reúne WhatsApp, Gmail, Telegram, Notion y más en una sola ventana, con sesiones persistentes, control de RAM y bloqueo con PIN. Hecho por Digital Fox.">
+<meta property="og:title" content="Yuki — todas tus apps web en una ventana">
+<meta property="og:description" content="Cliente de escritorio para Windows. Sesiones persistentes, RAM bajo control, PIN. Open source.">
+<meta property="og:type" content="website">
+<link rel="icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700;800&family=Figtree:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  /* ── Tokens (heredados de la app: violeta #7c3aed sobre índigo casi negro) ── */
+  :root {
+    --bg:        oklch(0.13 0.03 295);
+    --bg-2:      oklch(0.17 0.035 295);
+    --surface:   oklch(0.21 0.04 295);
+    --line:      oklch(0.42 0.12 295 / 0.45);
+    --ink:       oklch(0.97 0.01 295);
+    --ink-2:     oklch(0.84 0.02 295);
+    --ink-3:     oklch(0.72 0.03 295);
+    --violet:    oklch(0.55 0.25 295);   /* ≈ #7c3aed */
+    --violet-2:  oklch(0.66 0.21 295);
+    --violet-3:  oklch(0.80 0.12 295);
+    --snow:      oklch(0.98 0.005 295);
+    --sky:       oklch(0.75 0.14 230);   /* acento secundario de la app */
+    --ok:        oklch(0.78 0.18 150);
+
+    --font-display: 'Unbounded', system-ui, sans-serif;
+    --font-body: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+    --r-sm: 8px; --r-md: 14px; --r-lg: 22px; --r-xl: 32px;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --z-snow: 0; --z-content: 1; --z-nav: 10;
+    --gutter: clamp(16px, 5vw, 72px);
+    --measure: 62ch;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--ink-2);
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  ::selection { background: var(--violet); color: var(--snow); }
+  a { color: inherit; }
+  h1, h2, h3 { color: var(--ink); text-wrap: balance; font-family: var(--font-display); font-weight: 700; line-height: 1.08; letter-spacing: -0.02em; }
+  p { text-wrap: pretty; }
+  :focus-visible { outline: 2px solid var(--violet-3); outline-offset: 3px; border-radius: 4px; }
+
+  /* ── Nieve (canvas de fondo) ── */
+  #snow { position: fixed; inset: 0; z-index: var(--z-snow); pointer-events: none; opacity: 0.85; }
+
+  .wrap { position: relative; z-index: var(--z-content); }
+
+  /* ── Nav ── */
+  nav {
+    position: sticky; top: 0; z-index: var(--z-nav);
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 14px var(--gutter);
+    background: color-mix(in oklch, var(--bg) 78%, transparent);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid oklch(0.3 0.06 295 / 0.5);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); font-family: var(--font-display); font-weight: 700; font-size: 18px; letter-spacing: 0.02em; }
+  .brand img { width: 28px; height: 28px; border-radius: 8px; }
+  nav ul { display: flex; gap: 6px; list-style: none; }
+  nav ul a { text-decoration: none; padding: 8px 12px; border-radius: 999px; font-weight: 500; font-size: 15px; color: var(--ink-2); transition: background .2s var(--ease), color .2s var(--ease); }
+  nav ul a:hover { background: var(--surface); color: var(--ink); }
+  @media (max-width: 640px) { nav ul li:not(:last-child) { display: none; } }
+
+  /* ── Botones ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 14px 22px; border-radius: 999px; text-decoration: none;
+    font-weight: 600; font-size: 16px; line-height: 1; white-space: nowrap;
+    transition: transform .25s var(--ease), background .25s var(--ease), box-shadow .25s var(--ease);
+  }
+  .btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+  .btn-primary { background: var(--violet); color: var(--snow); box-shadow: 0 8px 30px -8px oklch(0.55 0.25 295 / 0.7); }
+  .btn-primary:hover { background: var(--violet-2); transform: translateY(-2px); box-shadow: 0 14px 34px -8px oklch(0.55 0.25 295 / 0.8); }
+  .btn-ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  .btn-ghost:hover { background: var(--surface); transform: translateY(-2px); }
+  .btn small { font-weight: 400; color: oklch(0.95 0.02 295 / 0.75); font-size: 13px; }
+
+  /* ── Hero ── */
+  .hero {
+    display: grid; gap: clamp(32px, 5vw, 64px);
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    align-items: center;
+    padding: clamp(56px, 9vw, 120px) var(--gutter) clamp(48px, 7vw, 96px);
+    max-width: 1280px; margin: 0 auto;
+  }
+  @media (max-width: 900px) { .hero { grid-template-columns: 1fr; } }
+  .hero h1 {
+    font-size: clamp(2.6rem, 6.2vw, 4.75rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin-bottom: 20px;
+  }
+  .hero h1 .kana { display: block; font-size: 0.42em; font-weight: 500; color: var(--violet-3); letter-spacing: 0.08em; margin-bottom: 10px; }
+  .hero h1 em { font-style: normal; color: var(--violet-3); }
+  .hero .lede { font-size: clamp(1.05rem, 1.5vw, 1.3rem); max-width: var(--measure); color: var(--ink-2); margin-bottom: 30px; }
+  .hero .cta { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .hero .meta { margin-top: 18px; font-size: 14px; color: var(--ink-3); display: flex; flex-wrap: wrap; gap: 6px 18px; }
+  .hero .meta a { color: var(--ink-3); }
+
+  /* ── Maqueta del shell de Yuki ── */
+  .shell-wrap { position: relative; perspective: 1400px; }
+  .shell {
+    position: relative;
+    aspect-ratio: 16 / 10.5;
+    background: oklch(0.11 0.025 295);
+    border: 1px solid oklch(0.35 0.08 295 / 0.6);
+    border-radius: var(--r-lg);
+    box-shadow: 0 40px 80px -30px oklch(0 0 0 / 0.8), 0 0 0 1px oklch(0.2 0.04 295) inset, 0 0 120px -30px oklch(0.55 0.25 295 / 0.5);
+    display: grid; grid-template-columns: 56px 1fr;
+    overflow: hidden;
+    transform: rotateY(-6deg) rotateX(3deg);
+    transition: transform .8s var(--ease);
+  }
+  .shell-wrap:hover .shell { transform: rotateY(0) rotateX(0); }
+  .shell .bar { position: absolute; top: 0; left: 0; right: 0; height: 26px; display: flex; justify-content: flex-end; align-items: center; gap: 10px; padding: 0 12px; font-size: 10px; color: var(--ink-3); }
+  .shell .bar i { width: 8px; height: 8px; border-radius: 2px; border: 1px solid var(--ink-3); opacity: .7; display: inline-block; }
+  .shell .side { background: oklch(0.16 0.035 295); padding: 34px 8px 10px; display: flex; flex-direction: column; gap: 8px; border-right: 1px solid oklch(0.3 0.06 295 / 0.5); }
+  .shell .app { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: oklch(0.22 0.04 295); position: relative; transition: transform .3s var(--ease); }
+  .shell .app svg { width: 20px; height: 20px; }
+  .shell .app.active { background: var(--violet); box-shadow: 0 6px 18px -6px oklch(0.55 0.25 295); }
+  .shell .app.active::before { content: ''; position: absolute; left: -8px; top: 10px; width: 3px; height: 20px; border-radius: 3px; background: var(--snow); }
+  .shell .app .dot { position: absolute; top: -3px; right: -3px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; background: var(--ok); color: oklch(0.15 0.05 150); font-size: 10px; font-weight: 700; display: grid; place-items: center; font-family: var(--font-body); }
+  .shell .app.zz { opacity: .45; }
+  .shell .app.zz::after { content: 'z'; position: absolute; top: -6px; right: -2px; font-size: 11px; color: var(--violet-3); font-weight: 700; font-style: italic; }
+  .shell .side .gear { margin-top: auto; }
+  .shell .view { margin: 32px 10px 10px 8px; border-radius: 12px; background: oklch(0.2 0.03 295); border: 1px solid oklch(0.3 0.06 295 / 0.5); display: grid; grid-template-columns: 36% 1fr; overflow: hidden; }
+  .shell .chats { border-right: 1px solid oklch(0.3 0.06 295 / 0.5); padding: 10px 8px; display: flex; flex-direction: column; gap: 8px; }
+  .shell .chat { display: flex; gap: 8px; align-items: center; }
+  .shell .chat .av { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; background: oklch(0.45 0.12 var(--h, 295)); }
+  .shell .chat .ln { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+  .shell .chat .ln i { display: block; height: 5px; border-radius: 3px; background: oklch(0.38 0.05 295); }
+  .shell .chat .ln i:last-child { width: 60%; opacity: .6; }
+  .shell .msgs { padding: 12px; display: flex; flex-direction: column; gap: 7px; justify-content: flex-end; }
+  .shell .bub { max-width: 68%; padding: 6px 9px; border-radius: 10px; background: oklch(0.28 0.04 295); font-size: 9px; line-height: 1.3; color: var(--ink-2); }
+  .shell .bub.me { align-self: flex-end; background: var(--violet); color: var(--snow); border-bottom-right-radius: 3px; }
+  .shell .bub:not(.me) { border-bottom-left-radius: 3px; }
+  .shell .bub .miss { text-decoration: underline wavy oklch(0.7 0.2 20); text-underline-offset: 2px; }
+  .shell .ctx { position: absolute; right: 8%; bottom: 34%; background: oklch(0.24 0.03 295); border: 1px solid oklch(0.4 0.08 295 / 0.6); border-radius: 8px; padding: 5px 0; font-size: 9px; box-shadow: 0 14px 30px -10px oklch(0 0 0 / .8); min-width: 110px; }
+  .shell .ctx div { padding: 3px 10px; color: var(--ink-2); }
+  .shell .ctx div.hl { background: var(--violet); color: var(--snow); }
+  .shell .ctx hr { border: 0; border-top: 1px solid oklch(0.35 0.06 295 / .6); margin: 3px 0; }
+
+  /* Chips flotantes: apps que "entran" al shell */
+  .chip { position: absolute; display: flex; align-items: center; gap: 8px; padding: 8px 14px 8px 10px; border-radius: 999px; background: color-mix(in oklch, var(--surface) 85%, transparent); border: 1px solid var(--line); backdrop-filter: blur(8px); font-weight: 600; font-size: 14px; color: var(--ink); box-shadow: 0 16px 30px -14px oklch(0 0 0 / .9); animation: float 6s var(--ease) infinite alternate; }
+  .chip svg { width: 18px; height: 18px; }
+  .chip.a { top: -18px; left: -14px; animation-delay: -1s; }
+  .chip.b { right: -10px; top: 18%; animation-delay: -3s; }
+  .chip.c { bottom: -14px; left: 22%; animation-delay: -5s; }
+  @keyframes float { from { transform: translateY(0) } to { transform: translateY(-10px) } }
+  @media (max-width: 900px) { .chip.b { right: 0 } .shell-wrap { margin-top: 30px; } }
+
+  /* ── Secciones ── */
+  section { padding: clamp(56px, 8vw, 110px) var(--gutter); }
+  .inner { max-width: 1180px; margin: 0 auto; }
+  .section-title { font-size: clamp(1.9rem, 3.8vw, 2.9rem); margin-bottom: 14px; }
+  .section-lede { max-width: var(--measure); color: var(--ink-2); font-size: 1.1rem; margin-bottom: clamp(32px, 4vw, 56px); }
+
+  /* ── Features: bento asimétrico ── */
+  .bento { display: grid; gap: 14px; grid-template-columns: repeat(6, 1fr); grid-auto-rows: minmax(150px, auto); }
+  .tile { position: relative; overflow: hidden; border-radius: var(--r-lg); background: var(--bg-2); border: 1px solid oklch(0.3 0.06 295 / 0.45); padding: 26px; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; min-height: 210px; transition: border-color .3s var(--ease), transform .4s var(--ease); }
+  .tile:hover { border-color: var(--line); transform: translateY(-3px); }
+  .tile h3 { font-family: var(--font-body); font-size: 1.15rem; font-weight: 700; letter-spacing: 0; }
+  .tile p { color: var(--ink-3); font-size: 15px; max-width: 42ch; }
+  .tile .art { pointer-events: none; margin: -6px 0 auto; }  /* en flujo: arriba, el texto abajo */
+  .t1 { grid-column: span 4; grid-row: span 2; background: linear-gradient(160deg, oklch(0.24 0.08 295), var(--bg-2) 60%); }
+  .t2 { grid-column: span 2; grid-row: span 2; }
+  .t3 { grid-column: span 2; }
+  .t4 { grid-column: span 2; }
+  .t5 { grid-column: span 2; }
+  .t6 { grid-column: span 3; }
+  .t7 { grid-column: span 3; }
+  @media (max-width: 900px) { .bento { grid-template-columns: repeat(2, 1fr); } .t1, .t2, .t6, .t7 { grid-column: span 2; } .t3, .t4, .t5 { grid-column: span 1; } }
+  @media (max-width: 560px) { .bento { grid-template-columns: 1fr; } .tile { grid-column: span 1 !important; } }
+
+  /* arte del tile 1: sesiones = filas de "cookies" que persisten */
+  .t1 .art { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 0 0 26px; opacity: .9; align-content: start; }
+  .t1 .sess { border-radius: 12px; background: oklch(0.19 0.04 295); border: 1px solid oklch(0.32 0.07 295 / .6); padding: 10px; display: flex; flex-direction: column; gap: 6px; font-size: 11px; color: var(--ink-3); }
+  .t1 .sess b { color: var(--ink); font-weight: 600; display: flex; align-items: center; gap: 6px; }
+  .t1 .sess b i { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); display: inline-block; }
+  .t1 .sess span { display: block; height: 5px; border-radius: 3px; background: oklch(0.3 0.05 295); width: 80%; }
+  /* tile 2: RAM */
+  .t2 .art { display: flex; flex-direction: column; gap: 10px; padding: 0 0 26px; }
+  .ram { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--ink-3); }
+  .ram b { width: 64px; color: var(--ink); font-weight: 600; }
+  .ram .bar { flex: 1; height: 8px; border-radius: 4px; background: oklch(0.24 0.04 295); overflow: hidden; }
+  .ram .bar i { display: block; height: 100%; border-radius: 4px; background: var(--violet-2); width: var(--w); animation: ram 3.2s var(--ease) infinite alternate; }
+  .ram.zz .bar i { background: oklch(0.4 0.06 295); animation: none; width: 6%; }
+  @keyframes ram { from { width: var(--w) } to { width: calc(var(--w) * .82) } }
+  /* tile 3: PIN */
+  .t3 .art { display: flex; align-items: flex-start; padding-bottom: 22px; gap: 8px; }
+  .t3 .art i { width: 12px; height: 12px; border-radius: 50%; background: var(--violet-3); }
+  .t3 .art i:nth-child(4) { background: oklch(0.32 0.06 295); }
+  /* tile 4: notificación */
+  .t4 .art { padding: 0 0 18px; }
+  .toast { display: flex; gap: 10px; align-items: center; background: oklch(0.2 0.035 295); border: 1px solid oklch(0.34 0.07 295 / .6); border-radius: 12px; padding: 9px 12px; font-size: 12px; box-shadow: 0 12px 24px -12px oklch(0 0 0 / .8); }
+  .toast .av { width: 26px; height: 26px; border-radius: 50%; background: var(--ok); flex-shrink: 0; }
+  .toast b { display: block; color: var(--ink); font-weight: 600; }
+  .toast span { color: var(--ink-3); }
+  /* tile 5: teclado */
+  .t5 .art { padding: 0 0 20px; display: flex; gap: 6px; align-items: flex-start; }
+  .key { padding: 5px 9px; border-radius: 6px; background: oklch(0.22 0.04 295); border: 1px solid oklch(0.36 0.07 295 / .7); border-bottom-width: 3px; font-size: 12px; font-weight: 600; color: var(--ink); font-family: var(--font-body); }
+  /* tile 6/7: texto + icono a la izquierda */
+  .t6, .t7 { justify-content: center; }
+  .t6 .ico, .t7 .ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: oklch(0.24 0.06 295); margin-bottom: 8px; }
+  .t6 .ico svg, .t7 .ico svg { width: 20px; height: 20px; stroke: var(--violet-3); }
+
+  /* ── Cómo empezar: 3 pasos reales (secuencia) ── */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; counter-reset: step; }
+  @media (max-width: 760px) { .steps { grid-template-columns: 1fr; } }
+  .step { padding: 8px 4px; border-top: 1px solid var(--line); padding-top: 22px; }
+  .step::before { counter-increment: step; content: counter(step); font-family: var(--font-display); font-weight: 800; font-size: 2.2rem; color: var(--violet-3); display: block; line-height: 1; margin-bottom: 14px; }
+  .step h3 { font-family: var(--font-body); font-size: 1.15rem; font-weight: 700; letter-spacing: 0; margin-bottom: 6px; }
+  .step p { color: var(--ink-3); font-size: 15px; }
+  .step code { font-family: ui-monospace, Consolas, monospace; font-size: 13px; background: var(--surface); padding: 2px 6px; border-radius: 5px; color: var(--ink); }
+
+  /* ── Descarga ── */
+  .dl { background: linear-gradient(180deg, var(--bg) 0%, oklch(0.2 0.08 295) 100%); }
+  .dl .inner { text-align: center; }
+  .dl h2 { font-size: clamp(2rem, 4.5vw, 3.4rem); margin-bottom: 12px; }
+  .dl p { margin: 0 auto 28px; max-width: 52ch; color: var(--ink-2); }
+  .dl .cta { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+  .dl .fine { margin-top: 22px; font-size: 14px; color: var(--ink-3); }
+  .dl .fine a { color: var(--ink-2); }
+
+  /* ── Footer ── */
+  footer { padding: 36px var(--gutter) 48px; border-top: 1px solid oklch(0.3 0.06 295 / 0.5); }
+  footer .inner { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 14px; font-size: 14px; color: var(--ink-3); }
+  footer a { color: var(--ink-2); text-decoration: none; }
+  footer a:hover { color: var(--ink); text-decoration: underline; }
+  footer .fox { font-family: var(--font-display); font-weight: 700; color: var(--ink); letter-spacing: 0.02em; }
+
+  /* ── Reveal (mejora sobre estado visible por defecto) ── */
+  .rv { opacity: 1; transform: none; }
+  .js .rv { opacity: 0; transform: translateY(14px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
+  .js .rv.in { opacity: 1; transform: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
+    .js .rv { opacity: 1; transform: none; }
+    .shell { transform: none; }
+    #snow { display: none; }
+  }
+</style>
+</head>
+<body>
+<canvas id="snow" aria-hidden="true"></canvas>
+
+<div class="wrap">
+<nav aria-label="Principal">
+  <a class="brand" href="#"><img src="icon.png" alt="" width="28" height="28">Yuki</a>
+  <ul>
+    <li><a href="#que-hace">Qué hace</a></li>
+    <li><a href="#empezar">Cómo empezar</a></li>
+    <li><a href="https://github.com/foxen2005/yuki">GitHub</a></li>
+    <li><a href="#descarga" class="btn btn-primary" style="padding:9px 16px;font-size:14px">Descargar</a></li>
+  </ul>
+</nav>
+
+<header class="hero">
+  <div>
+    <h1>
+      <span class="kana">雪 · yuki · nieve</span>
+      Todas tus apps web.<br><em>Una sola ventana.</em>
+    </h1>
+    <p class="lede">WhatsApp, Gmail, Telegram, Notion, Slack… cada una con su sesión guardada, en un cliente de escritorio liviano para Windows. Sin pestañas perdidas, sin volver a iniciar sesión, sin que el navegador se coma la RAM.</p>
+    <div class="cta">
+      <a class="btn btn-primary" href="https://github.com/foxen2005/yuki/releases/download/v0.2.0/Yuki.Setup.0.2.0.exe">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+        Descargar para Windows <small>0.2.0 · 85 MB</small>
+      </a>
+      <a class="btn btn-ghost" href="https://github.com/foxen2005/yuki">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.8 1.3 3.4 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.2c0 .3.2.7.8.6 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5z"/></svg>
+        Ver el código
+      </a>
+    </div>
+    <p class="meta"><span>Windows 10/11 · x64</span><span>Open source · MIT</span><span><a href="https://github.com/foxen2005/yuki/releases/download/v0.2.0/Yuki.0.2.0.exe">Versión portable</a></span></p>
+  </div>
+
+  <div class="shell-wrap" aria-hidden="true">
+    <div class="shell">
+      <div class="bar"><i></i><i></i><i></i></div>
+      <div class="side">
+        <div class="app active"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.6 8.6 0 0 1-4-1L3 21l1.9-4.6A8.4 8.4 0 1 1 21 11.5z"/></svg><span class="dot">3</span></div>
+        <div class="app"><svg viewBox="0 0 24 24" fill="none" stroke="#e2d9ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg><span class="dot">12</span></div>
+        <div class="app"><svg viewBox="0 0 24 24" fill="none" stroke="#e2d9ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4z"/></svg></div>
+        <div class="app zz"><svg viewBox="0 0 24 24" fill="none" stroke="#e2d9ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V2H6.5A2.5 2.5 0 0 0 4 4.5z"/></svg></div>
+        <div class="app zz"><svg viewBox="0 0 24 24" fill="none" stroke="#e2d9ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+        <div class="app gear"><svg viewBox="0 0 24 24" fill="none" stroke="#9f92c8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></div>
+      </div>
+      <div class="view">
+        <div class="chats">
+          <div class="chat" style="--h:150"><div class="av"></div><div class="ln"><i></i><i></i></div></div>
+          <div class="chat" style="--h:60"><div class="av"></div><div class="ln"><i></i><i></i></div></div>
+          <div class="chat" style="--h:230"><div class="av"></div><div class="ln"><i></i><i></i></div></div>
+          <div class="chat" style="--h:320"><div class="av"></div><div class="ln"><i></i><i></i></div></div>
+          <div class="chat" style="--h:20"><div class="av"></div><div class="ln"><i></i><i></i></div></div>
+          <div class="chat" style="--h:110"><div class="av"></div><div class="ln"><i></i><i></i></div></div>
+        </div>
+        <div class="msgs">
+          <div class="bub">¿Nos juntamos el viernes?</div>
+          <div class="bub me">Sí, a las 10. Llevo el <span class="miss">proyector</span></div>
+          <div class="bub">👌</div>
+        </div>
+      </div>
+      <div class="ctx"><div class="hl">proyector</div><div>Agregar al diccionario</div><hr><div>Cortar</div><div>Copiar</div><div>Pegar</div></div>
+    </div>
+    <div class="chip a"><svg viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.6 8.6 0 0 1-4-1L3 21l1.9-4.6A8.4 8.4 0 1 1 21 11.5z"/></svg>WhatsApp</div>
+    <div class="chip b"><svg viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>Gmail</div>
+    <div class="chip c"><svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4z"/></svg>Telegram</div>
+  </div>
+</header>
+
+<section id="que-hace">
+  <div class="inner">
+    <h2 class="section-title rv">Lo que hace, sin humo.</h2>
+    <p class="section-lede rv">Yuki no es un navegador con otro nombre: cada app corre en su propio proceso aislado, con su sesión, y tú decides cuánta memoria le prestas.</p>
+
+    <div class="bento">
+      <article class="tile t1 rv">
+        <div class="art" aria-hidden="true">
+          <div class="sess"><b><i></i>WhatsApp</b><span></span><span style="width:55%"></span></div>
+          <div class="sess"><b><i></i>Gmail · trabajo</b><span></span><span style="width:70%"></span></div>
+          <div class="sess"><b><i></i>Gmail · personal</b><span></span><span style="width:45%"></span></div>
+        </div>
+        <h3>Sesiones que sobreviven al reinicio</h3>
+        <p>Cada app tiene su propia partición de Chromium. Dos Gmail con cuentas distintas, WhatsApp escaneado una sola vez: cierra Yuki, ábrelo mañana, sigue todo ahí.</p>
+      </article>
+
+      <article class="tile t2 rv">
+        <div class="art" aria-hidden="true">
+          <div class="ram" style="--w:78%"><b>WhatsApp</b><div class="bar"><i></i></div>310 MB</div>
+          <div class="ram" style="--w:60%"><b>Gmail</b><div class="bar"><i></i></div>240 MB</div>
+          <div class="ram zz"><b>Notion</b><div class="bar"><i></i></div>zz</div>
+          <div class="ram zz"><b>Calendar</b><div class="bar"><i></i></div>zz</div>
+        </div>
+        <h3>RAM bajo control</h3>
+        <p>Monitor de memoria por app y auto-sleep configurable: las que no usas se duermen y despiertan donde estaban.</p>
+      </article>
+
+      <article class="tile t3 rv">
+        <div class="art" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <h3>Bloqueo con PIN</h3>
+        <p>Al minimizar, pide PIN al volver. Guardado cifrado con el llavero de Windows.</p>
+      </article>
+
+      <article class="tile t4 rv">
+        <div class="art" aria-hidden="true"><div class="toast"><div class="av"></div><div><b>Camila</b><span>¿Viste el correo?</span></div></div></div>
+        <h3>Notificaciones nativas</h3>
+        <p>Con tu sonido, tu volumen, y un No molestar de verdad.</p>
+      </article>
+
+      <article class="tile t5 rv">
+        <div class="art" aria-hidden="true"><span class="key">Ctrl</span><span class="key">1</span><span class="key" style="opacity:.5">…</span><span class="key">9</span></div>
+        <h3>Atajos que no molestan</h3>
+        <p>Ctrl+1…9 cambia de app solo cuando Yuki está al frente. Nunca te roba teclas.</p>
+      </article>
+
+      <article class="tile t6 rv">
+        <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg></div>
+        <h3>Corrector ortográfico en español</h3>
+        <p>Click derecho sobre la palabra subrayada y elige la sugerencia, como en Chrome. En WhatsApp, Gmail, donde escribas.</p>
+      </article>
+
+      <article class="tile t7 rv">
+        <div class="ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></div>
+        <h3>Tu configuración es tuya</h3>
+        <p>Exporta e importa todo (apps, íconos, ajustes) en un JSON. Cambias de PC y en un minuto estás igual.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section id="empezar">
+  <div class="inner">
+    <h2 class="section-title rv">Tres minutos, contando la descarga.</h2>
+    <div class="steps">
+      <div class="step rv"><h3>Instala</h3><p>Baja el instalador o la versión portable. SmartScreen puede preguntar la primera vez: el exe aún no está firmado.</p></div>
+      <div class="step rv"><h3>Agrega tus apps</h3><p>Abre Configuración (⚙ abajo del sidebar) y elige del catálogo, o pega cualquier URL con su nombre e ícono.</p></div>
+      <div class="step rv"><h3>Inicia sesión una vez</h3><p>Escanea WhatsApp, entra a Gmail con la ventana de login dedicada. Después Yuki vive en la bandeja, con <code>Ctrl+1…9</code> a mano.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="descarga" class="dl">
+  <div class="inner">
+    <h2 class="rv">Que caiga la nieve.</h2>
+    <p class="rv">Gratis, sin cuenta, sin telemetría. Código abierto bajo licencia MIT.</p>
+    <div class="cta rv">
+      <a class="btn btn-primary" href="https://github.com/foxen2005/yuki/releases/download/v0.2.0/Yuki.Setup.0.2.0.exe">Instalador Windows <small>Setup 0.2.0</small></a>
+      <a class="btn btn-ghost" href="https://github.com/foxen2005/yuki/releases/download/v0.2.0/Yuki.0.2.0.exe">Portable <small>sin instalación</small></a>
+    </div>
+    <p class="fine rv">Windows 10/11 x64 · <a href="https://github.com/foxen2005/yuki/releases">Todas las versiones</a> · <a href="https://github.com/foxen2005/yuki/blob/master/CONTRIBUTING.md">Cómo contribuir</a></p>
+  </div>
+</section>
+
+<footer>
+  <div class="inner">
+    <span>Hecho en Chile por <a class="fox" href="https://github.com/foxen2005">Digital Fox</a></span>
+    <span>Electron 35 · <a href="https://github.com/foxen2005/yuki">github.com/foxen2005/yuki</a> · MIT</span>
+  </div>
+</footer>
+</div>
+
+<script>
+  document.documentElement.classList.add('js')
+
+  // Reveal al entrar en viewport (contenido visible por defecto sin JS)
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target) } }), { rootMargin: '0px 0px -8% 0px' })
+  document.querySelectorAll('.rv').forEach(el => io.observe(el))
+
+  // Nieve: pocos copos, lentos, con deriva. Se apaga con prefers-reduced-motion.
+  ;(function () {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const c = document.getElementById('snow'), ctx = c.getContext('2d')
+    let W, H, flakes = [], raf
+    const N = () => Math.min(90, Math.floor(W * H / 22000))
+    function resize() { W = c.width = innerWidth * devicePixelRatio; H = c.height = innerHeight * devicePixelRatio; c.style.width = innerWidth + 'px'; c.style.height = innerHeight + 'px'; flakes = Array.from({ length: N() }, mk) }
+    function mk() { return { x: Math.random() * W, y: Math.random() * H, r: (0.8 + Math.random() * 2.2) * devicePixelRatio, v: (0.25 + Math.random() * 0.6) * devicePixelRatio, d: Math.random() * Math.PI * 2, s: 0.2 + Math.random() * 0.5 } }
+    function tick() {
+      ctx.clearRect(0, 0, W, H)
+      for (const f of flakes) {
+        f.y += f.v; f.d += 0.01; f.x += Math.sin(f.d) * 0.4 * devicePixelRatio
+        if (f.y > H + 10) { f.y = -10; f.x = Math.random() * W }
+        ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2)
+        ctx.fillStyle = `oklch(0.95 0.02 295 / ${f.s})`; ctx.fill()
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    addEventListener('resize', resize, { passive: true })
+    document.addEventListener('visibilitychange', () => { document.hidden ? cancelAnimationFrame(raf) : tick() })
+    resize(); tick()
+  })()
+</script>
+</body>
+</html>

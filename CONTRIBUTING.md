@@ -3,37 +3,34 @@
 ## Dev setup
 
 ```bash
-git clone https://github.com/digitalfox-studio/yuki.git
+git clone https://github.com/foxen2005/yuki.git
 cd yuki
 npm install
 npm start        # launch app in dev mode
-npm run build    # build Windows NSIS installer
+npm run build    # NSIS installer + portable exe in dist/
+npm run start:dev  # same as start, with --inspect=9229 for the main process
 ```
 
-DevTools: press **F12** or **Ctrl+Shift+I** while the app is open.
-
-Per-view DevTools: right-click the sidebar icon → "Abrir DevTools" (or call `window.yukiAPI.openDevTools(id)` from the renderer console).
+DevTools: there are no global shortcuts (they were removed so Yuki never captures keys from other apps). Open the shell DevTools with `win.webContents.openDevTools()` from the inspector, or a view's DevTools with `window.yukiAPI.openDevTools(id)` from the renderer console.
 
 ---
 
 ## Adding apps to the built-in catalog
 
-1. Create a 64×64 PNG icon and place it in `icons/yourapp.png`
-2. Open `src/renderer/renderer.js` and find `DEFAULT_CATALOG`
-3. Add an entry:
+The catalog is plain HTML in `src/renderer/index.html` (sections "Mensajería", "Email", "Productividad", "Videollamadas"). Add a `.catalog-item` to the right `.catalog-grid`:
 
-```js
-{
-  id: 'yourapp',          // unique slug, used as partition name
-  name: 'Your App',
-  url: 'https://yourapp.com',
-  icon: '../../icons/yourapp.png',
-  color: '#hexcolor',
-  googleAuth: false,      // set true for Google-authenticated apps
-}
+```html
+<div class="catalog-item" role="button" tabindex="0"
+     data-name="Your App"
+     data-icon="lucide:globe"
+     data-url="https://yourapp.com">
+  <div class="icon"><i data-lucide="globe" class="icon-lucide"></i></div><div class="name">Your App</div>
+</div>
 ```
 
-4. For Google apps, set `googleAuth: true` — the renderer will show the auth banner automatically when the view navigates to `accounts.google.com`
+- `data-icon` is either `lucide:<name>` (any current [Lucide](https://lucide.dev) icon; brand icons like `github`/`twitter` no longer exist) or an emoji.
+- For an animated default icon, add `data-icon-key` and register the file in `DEFAULT_ICONS` (`renderer.js`).
+- Google apps need nothing special: `view-manager.js` detects navigation to `accounts.google.com` and the renderer shows the login banner.
 
 ---
 
@@ -49,16 +46,18 @@ All renderer → main communication goes through `window.yukiAPI` (exposed via c
 | `yukiAPI.sleepView(id)` | `view:sleep` | `{id}` | `void` |
 | `yukiAPI.destroyView(id)` | `view:destroy` | `{id}` | `void` |
 | `yukiAPI.reloadView(id)` | `view:reload` | `{id}` | `void` |
-| `yukiAPI.resizeViews()` | `view:resize-all` | — | `void` |
+| `yukiAPI.resizeViews(leftOffset, rightCrop)` | `view:resize-all` | `72,12` normal · `9999,12` hides views (settings/lock open). ViewManager remembers the last layout. | `void` |
+| `yukiAPI.captureActive()` | `view:capture-active` | — | data URL of the active view (blur behind settings) |
 | `yukiAPI.openDevTools(id)` | `view:devtools` | `{id}` | `void` |
-| `yukiAPI.setAutoSleep(ms)` | `view:set-auto-sleep` | `{ms}` | `void` |
+| `yukiAPI.setAutoSleep(minutes)` | `view:set-auto-sleep` | `0` disables | `void` |
+| `yukiAPI.setSleepable(id, bool)` | `view:set-sleepable` | per-app toggle honoured by auto-sleep | `void` |
 
 ### Auth and sessions (invoke/handle)
 
 | Method | IPC channel | Notes |
 |---|---|---|
 | `yukiAPI.openGoogleAuth(partition, clearFirst)` | `open-google-auth` | `ipcMain.on` (fire and forget) |
-| `yukiAPI.clearSession(partition)` | `session:clear` | Clears cookies + cache |
+| `yukiAPI.clearSession(partition)` | `session:clear` | Clears cookies + cache, then reloads the view's base URL |
 
 ### Config (invoke/handle)
 
@@ -69,6 +68,8 @@ All renderer → main communication goes through `window.yukiAPI` (exposed via c
 | `yukiAPI.getUserdataPath()` | `get-userdata-path` | Returns `app.getPath('userData')` |
 | `yukiAPI.readAutosave()` | `autosave:read` | Returns parsed JSON or null |
 | `yukiAPI.openUserdata()` | `open-userdata` | Opens folder in Explorer (`ipcMain.on`) |
+| `yukiAPI.hideWindow()` | `window:hide` | Minimize to tray (`ipcMain.on`) |
+| `yukiAPI.quitApp()` | `window:quit` | Real quit (`ipcMain.on`) |
 
 ### PIN (invoke/handle, encrypted with safeStorage)
 
@@ -91,12 +92,11 @@ Subscribe with `yukiAPI.on(channel, callback)`. Returns an unsubscribe function.
 | `view:navigate` | `{id, url}` | Navigation completes |
 | `view:needs-google-auth` | `{id, partition}` | View redirected to accounts.google.com |
 | `view:notification` | `{id, title, body, icon}` | Web app triggered a notification |
-| `view:memory-report` | `[{id, privateMB}]` | Every 30s from ViewManager monitor |
-| `session:cleared` | `{partition}` | After `session:clear` completes |
-| `google-auth-done` | `{partition}` | Google auth popup closed successfully |
-| `yuki-window-show` | — | App window restored from tray |
-| `switch-app-index` | `{index}` | Keyboard shortcut Ctrl+1-9 |
-| `open-webview-devtools` | — | F12 / Ctrl+Shift+I |
+| `view:memory-report` | `[{id, privateMB}]` | Every 30s from ViewManager monitor (also sent empty) |
+| `session:cleared` | `{id}` | After `session:clear` completes |
+| `google-auth-done` | `partition` | Google auth popup closed successfully |
+| `yuki-window-show` | — | Window shown/restored (tray, menu, second instance, taskbar restore) — triggers the PIN lock |
+| `switch-app-index` | `index` | Ctrl+1..9 while Yuki (shell or a view) has focus |
 
 ### Events from WebContentsView preloads
 
@@ -108,6 +108,10 @@ These are sent from `webview-preload.js` via `ipcRenderer.send()` and received i
 | `view:open-external` | `url` | Opens in system browser via `shell.openExternal` |
 
 ---
+
+## Native views vs DOM
+
+`WebContentsView`s are native and always paint **above** the renderer DOM. Anything in the shell that must be visible over an app (settings panel, PIN lock, toast, Google banner) either lives in the top 40px strip (the views start at y=40) or hides the views first. `syncViewLayout()` in `renderer.js` is the single place that decides that; call it instead of `resizeViews()` directly.
 
 ## Security rules
 
@@ -124,7 +128,10 @@ These are sent from `webview-preload.js` via `ipcRenderer.send()` and received i
 - [ ] Bump version in `package.json`
 - [ ] `npm run build` — no errors, installer generated in `dist/`
 - [ ] Test Gmail login from scratch (clear `userData/Partitions/persist_gmail/`)
-- [ ] Test PIN lock/unlock, PIN migration from v0.1.0
+- [ ] Test PIN lock/unlock (views must be hidden behind the lock), PIN migration from v0.1.0
+- [ ] Test Ctrl+1..9 does NOT fire while another app is focused
+- [ ] Test spellcheck suggestions in WhatsApp and Gmail
 - [ ] Test backup export/import round-trip
 - [ ] Test sleep/wake on 3+ apps
-- [ ] Tag: `git tag v0.2.0 && git push --tags`
+- [ ] Tag and release with both exes: `git tag vX.Y.Z && git push --tags && gh release create vX.Y.Z "dist/Yuki Setup X.Y.Z.exe" "dist/Yuki X.Y.Z.exe"`
+- [ ] Update the download links in `README.md` and `docs/index.html`
