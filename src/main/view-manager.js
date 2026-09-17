@@ -44,12 +44,23 @@ class ViewManager {
       return !['midi', 'midiSysex'].includes(permission)
     })
 
+    // Corrector ortográfico: español + inglés. Sin esto Electron usa solo el
+    // idioma del sistema y las sugerencias no aparecen para el otro idioma.
+    try {
+      // No existe es-CL en Chromium; es-419 (Latinoamérica) es el más cercano
+      const avail = ses.availableSpellCheckerLanguages
+      const es = ['es-419', 'es', 'es-ES'].find(l => avail.includes(l))
+      const langs = [es, 'en-US'].filter(l => l && avail.includes(l))
+      if (langs.length) ses.setSpellCheckerLanguages(langs)
+    } catch (e) {}
+
     const view = new WebContentsView({
       webPreferences: {
         session: ses,
         contextIsolation: false,
         nodeIntegration: false,
         sandbox: false,
+        spellcheck: true,
         preload: path.join(__dirname, '../preload/webview-preload.js'),
       },
     })
@@ -271,8 +282,23 @@ class ViewManager {
     })
 
     wc.on('context-menu', (_, params) => {
-      const { selectionText, isEditable, editFlags } = params
+      const { selectionText, isEditable, editFlags, misspelledWord, dictionarySuggestions } = params
       const items = []
+      // Sugerencias del corrector: al reemplazar el menú nativo se perdían.
+      // replaceMisspelling() sustituye la palabra bajo el cursor en la página.
+      if (isEditable && misspelledWord) {
+        const sugg = (dictionarySuggestions || []).slice(0, 6)
+        if (sugg.length) {
+          sugg.forEach(word => items.push({ label: word, click: () => wc.replaceMisspelling(word) }))
+        } else {
+          items.push({ label: 'Sin sugerencias', enabled: false })
+        }
+        items.push({
+          label: `Agregar "${misspelledWord}" al diccionario`,
+          click: () => wc.session.addWordToSpellCheckerDictionary(misspelledWord),
+        })
+        items.push({ type: 'separator' })
+      }
       if (isEditable) {
         if (editFlags.canCut && selectionText)  items.push({ role: 'cut',       label: 'Cortar' })
         if (editFlags.canCopy && selectionText) items.push({ role: 'copy',      label: 'Copiar' })
