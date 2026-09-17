@@ -1,6 +1,7 @@
 const { WebContentsView, session, shell, Menu } = require('electron')
 const path = require('path')
 const { spoofSession } = require('./session-manager')
+const { bindAppSwitchKeys } = require('./window')
 
 class ViewManager {
   constructor(win) {
@@ -210,6 +211,7 @@ class ViewManager {
 
   _attachListeners(view, id) {
     const wc = view.webContents
+    bindAppSwitchKeys(wc, this.win)
 
     wc.on('did-start-loading', () => {
       if (!this.win.isDestroyed()) this.win.webContents.send('view:loading-start', { id })

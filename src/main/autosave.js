@@ -1,4 +1,4 @@
-const { app, globalShortcut, session } = require('electron')
+const { app, session } = require('electron')
 const path = require('path')
 const fs = require('fs')
 
@@ -8,7 +8,6 @@ function setupAutosave({ win, viewManager }) {
 
   app.on('before-quit', (e) => {
     app.isQuiting = true
-    globalShortcut.unregisterAll()
 
     if (autosaveDone || !win || win.isDestroyed()) return
     e.preventDefault()

@@ -1,4 +1,4 @@
-const { BrowserWindow, Tray, Menu, nativeImage, globalShortcut } = require('electron')
+const { BrowserWindow, Tray, Menu, nativeImage } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const { app } = require('electron')
@@ -89,20 +89,24 @@ function createTray(mainWin) {
   return tray
 }
 
+// Ctrl+1..9 cambia de app SOLO cuando Yuki tiene el foco. Antes se usaba
+// globalShortcut, que capturaba la tecla en todo Windows aunque Yuki estuviera
+// en segundo plano. Se registra sobre cada webContents (shell + cada vista web)
+// porque el input llega al webContents enfocado, no a la ventana.
+function bindAppSwitchKeys(wc, mainWin) {
+  wc.on('before-input-event', (event, input) => {
+    if (input.type !== 'keyDown' || !input.control || input.alt || input.shift || input.meta) return
+    const n = parseInt(input.key, 10)
+    if (!(n >= 1 && n <= 9)) return
+    event.preventDefault()
+    if (mainWin && !mainWin.isDestroyed()) mainWin.webContents.send('switch-app-index', n - 1)
+  })
+}
+
 function registerShortcuts(mainWin) {
-  for (let i = 1; i <= 9; i++) {
-    globalShortcut.register(`CommandOrControl+${i}`, () => {
-      if (mainWin) { mainWin.show(); mainWin.focus(); mainWin.webContents.send('switch-app-index', i - 1) }
-    })
-  }
-  globalShortcut.register('F12', () => {
-    if (mainWin) mainWin.webContents.openDevTools()
-  })
-  globalShortcut.register('CommandOrControl+Shift+I', () => {
-    if (mainWin) mainWin.webContents.send('open-webview-devtools')
-  })
+  bindAppSwitchKeys(mainWin.webContents, mainWin)
 }
 
 function getWin() { return win }
 
-module.exports = { createWindow, createTray, registerShortcuts, getWin }
+module.exports = { createWindow, createTray, registerShortcuts, bindAppSwitchKeys, getWin }

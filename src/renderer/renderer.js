@@ -867,9 +867,6 @@ window.yukiAPI.on('switch-app-index', (index) => {
   if (apps[index]) switchTo(apps[index].id)
 })
 
-window.yukiAPI.on('open-webview-devtools', () => {
-  if (activeId) window.yukiAPI.openDevTools(activeId).catch(() => { })
-})
 
 // ── Iconos por defecto ────────────────────────────────────────────────────────
 const DEFAULT_ICONS = {

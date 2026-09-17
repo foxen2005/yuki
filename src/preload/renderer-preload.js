@@ -5,7 +5,6 @@ const ALLOWED_EVENTS = [
   'google-auth-done',
   'yuki-window-show',
   'switch-app-index',
-  'open-webview-devtools',
   'view:loading-start',
   'view:loading-stop',
   'view:title-updated',
