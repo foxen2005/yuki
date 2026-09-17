@@ -402,6 +402,9 @@ function addFromCatalog(name, icon, url) {
   apps.push({ id, name: label, icon, url })
   saveApps(apps)
   render()
+  // Cerrar el panel antes de abrir la vista: una vista nueva nace con el tamaño
+  // normal y taparía el panel (las vistas nativas van sobre el DOM)
+  closeSettings()
   switchTo(id)
   showToast(`${label} agregado`)
 }
@@ -419,6 +422,9 @@ function addCustomApp() {
   document.getElementById('custom-url').value = ''
   document.getElementById('custom-icon').value = ''
   render()
+  // Cerrar el panel antes de abrir la vista: una vista nueva nace con el tamaño
+  // normal y taparía el panel (las vistas nativas van sobre el DOM)
+  closeSettings()
   switchTo(id)
   showToast(`${name} agregado`)
 }
