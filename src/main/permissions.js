@@ -55,7 +55,7 @@ async function ask(win, origin, permission, details) {
     type: 'question',
     title: 'Permiso',
     message: `${origin} quiere ${what}${extra}`,
-    detail: 'Yuki recordará tu decisión para este sitio. Puedes borrarla desde Configuración → Datos.',
+    detail: 'Yuki recordará tu decisión para este sitio. Puedes cambiarla en Configuración → Permisos de sitios.',
     buttons: ['Permitir', 'Bloquear'],
     defaultId: 0,
     cancelId: 1,
@@ -88,16 +88,28 @@ function attach(ses, win) {
     callback(await ask(win, origin, permission, details))
   })
 
-  // Consulta síncrona (navigator.permissions.query, getUserMedia previo al request):
-  // responde lo recordado; si no hay decisión, "no" hasta que el request pregunte.
+  // Consulta síncrona (navigator.permissions.query). Sin decisión guardada se
+  // responde "sí": si dijéramos "no", sitios como WhatsApp leen "denegado",
+  // muestran su propio aviso y nunca llegan a pedir el permiso, así que el
+  // diálogo de arriba no se dispara jamás. El request handler sigue preguntando.
   ses.setPermissionCheckHandler((wc, permission, requestingOrigin) => {
     if (ALWAYS_ALLOW.has(permission)) return true
     if (ALWAYS_DENY.has(permission)) return false
     const saved = load()[key(originOf(wc, requestingOrigin), permission)]
-    return saved === true
+    return saved !== false
   })
 }
 
 function reset() { store = {}; save() }
 
-module.exports = { attach, reset }
+// Para el editor de Configuración
+function list() {
+  return Object.entries(load()).map(([k, allowed]) => {
+    const [origin, permission] = k.split('|')
+    return { origin, permission, label: LABELS[permission] || permission, allowed }
+  })
+}
+function set(origin, permission, allowed) { load()[key(origin, permission)] = !!allowed; save() }
+function remove(origin, permission) { delete load()[key(origin, permission)]; save() }
+
+module.exports = { attach, reset, list, set, remove }

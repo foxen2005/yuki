@@ -107,6 +107,9 @@ function registerHandlers({ win, viewManager }) {
 
   // ── Permisos de sitios ────────────────────────────────────────────────────
   ipcMain.handle('permissions:reset', () => { permissions.reset(); return { ok: true } })
+  ipcMain.handle('permissions:list', () => permissions.list())
+  ipcMain.handle('permissions:set', (_, origin, permission, allowed) => { permissions.set(origin, permission, allowed); return { ok: true } })
+  ipcMain.handle('permissions:remove', (_, origin, permission) => { permissions.remove(origin, permission); return { ok: true } })
 
   // ── Ventana ───────────────────────────────────────────────────────────────
   ipcMain.on('window:hide', () => { win.hide() })

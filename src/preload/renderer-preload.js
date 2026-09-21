@@ -45,6 +45,9 @@ contextBridge.exposeInMainWorld('yukiAPI', {
   hideWindow:      ()     => ipcRenderer.send('window:hide'),
   quitApp:         ()     => ipcRenderer.send('window:quit'),
   resetPermissions:()     => ipcRenderer.invoke('permissions:reset'),
+  listPermissions: ()     => ipcRenderer.invoke('permissions:list'),
+  setPermission:   (origin, permission, allowed) => ipcRenderer.invoke('permissions:set', origin, permission, allowed),
+  removePermission:(origin, permission)          => ipcRenderer.invoke('permissions:remove', origin, permission),
   installUpdate:   ()     => ipcRenderer.send('update:install'),
 
   // ── PIN (almacenamiento seguro) ──────────────────────────────────────────

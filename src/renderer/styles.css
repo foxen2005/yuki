@@ -559,3 +559,14 @@ body {
   margin-left: 8px; background: white; color: var(--primary); border: none;
   border-radius: 10px; padding: 3px 10px; font-weight: 700; font-size: 12px; cursor: pointer;
 }
+
+/* ── Editor de permisos de sitios ── */
+.perm-empty { font-size: 11px; color: var(--text-muted); padding: 4px 0; }
+.perm-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--border-color); }
+.perm-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.perm-origin { font-size: 12px; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.perm-label { font-size: 11px; color: var(--text-muted); }
+.perm-state { border: none; border-radius: 999px; padding: 3px 10px; font-size: 11px; font-weight: 700; cursor: pointer; transition: var(--transition); }
+.perm-state.ok { background: #22c55e33; color: #4ade80; }
+.perm-state.no { background: #ef444433; color: #f87171; }
+.perm-state:hover { filter: brightness(1.25); }

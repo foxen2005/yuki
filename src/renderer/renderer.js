@@ -491,9 +491,41 @@ function resizeImage(dataUrl, size, callback) {
 // el ancho de las vistas recortando por la derecha en lugar de mover el borde izquierdo.
 const SETTINGS_WIDTH = 400
 
+// ── Editor de permisos de sitios ──────────────────────────────────────────────
+async function renderPermissions() {
+  const list = document.getElementById('permissions-list')
+  if (!list) return
+  const items = await window.yukiAPI.listPermissions().catch(() => [])
+  if (!items.length) {
+    list.innerHTML = '<div class="perm-empty">Ningún sitio ha pedido permisos todavía</div>'
+    return
+  }
+  list.innerHTML = items.map(p => `
+    <div class="perm-item">
+      <div class="perm-info">
+        <span class="perm-origin">${esc(p.origin.replace(/^https?:\/\//, ''))}</span>
+        <span class="perm-label">${esc(p.label)}</span>
+      </div>
+      <button class="perm-state ${p.allowed ? 'ok' : 'no'}" data-origin="${esc(p.origin)}" data-perm="${esc(p.permission)}" data-allowed="${p.allowed ? 1 : 0}" title="Click para cambiar">${p.allowed ? 'Permitido' : 'Bloqueado'}</button>
+      <button class="icon-btn perm-del" data-origin="${esc(p.origin)}" data-perm="${esc(p.permission)}" title="Olvidar (volverá a preguntar)" aria-label="Olvidar"><i data-lucide="x" class="icon-lucide"></i></button>
+    </div>`).join('')
+  list.querySelectorAll('.perm-state').forEach(b => b.addEventListener('click', async () => {
+    const allowed = b.dataset.allowed !== '1'
+    await window.yukiAPI.setPermission(b.dataset.origin, b.dataset.perm, allowed)
+    renderPermissions()
+    showToast(`${allowed ? 'Permitido' : 'Bloqueado'} · recarga la app para que lo tome`, 3000)
+  }))
+  list.querySelectorAll('.perm-del').forEach(b => b.addEventListener('click', async () => {
+    await window.yukiAPI.removePermission(b.dataset.origin, b.dataset.perm)
+    renderPermissions()
+  }))
+  if (window.lucide) window.lucide.createIcons()
+}
+
 let settingsOpenToken = 0
 async function openSettingsPanel() {
   renderServicesList(loadApps())
+  renderPermissions()
   if (window.lucide) window.lucide.createIcons()
   const token = ++settingsOpenToken
 
@@ -844,6 +876,7 @@ function hideGoogleAuthBanner() {
     document.getElementById('btn-reset-permissions').addEventListener('click', async () => {
       if (!confirm('¿Olvidar todas las decisiones de cámara, micrófono y ubicación?\nLos sitios volverán a preguntar.')) return
       await window.yukiAPI.resetPermissions()
+      renderPermissions()
       showToast('Permisos de sitios reiniciados')
     })
 
