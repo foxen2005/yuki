@@ -95,6 +95,10 @@ function attach(ses, win) {
   ses.setPermissionCheckHandler((wc, permission, requestingOrigin) => {
     if (ALWAYS_ALLOW.has(permission)) return true
     if (ALWAYS_DENY.has(permission)) return false
+    // Solo para lo que se pregunta; el resto sigue denegado también aquí.
+    // Trade-off conocido: con 'media' en "sí" provisional, enumerateDevices()
+    // muestra los nombres de cámara/micrófono antes del diálogo (no el acceso).
+    if (!ASK.has(permission)) return false
     const saved = load()[key(originOf(wc, requestingOrigin), permission)]
     return saved !== false
   })
