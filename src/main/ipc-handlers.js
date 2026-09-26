@@ -3,6 +3,7 @@ const permissions = require('./permissions')
 const path = require('path')
 const fs = require('fs')
 const { openGoogleLogin } = require('./google-auth')
+const { checkNow } = require('./updater')
 
 function registerHandlers({ win, viewManager }) {
   const PIN_PATH = path.join(app.getPath('userData'), 'yuki-pin.enc')
@@ -39,6 +40,23 @@ function registerHandlers({ win, viewManager }) {
   })
   ipcMain.handle('view:set-memory-reporting', (_, enabled) => {
     viewManager.setMemoryReporting(enabled)
+  })
+
+  // ── Acerca de ─────────────────────────────────────────────────────────────
+  // Todo se lee en vivo: antes la versión y las tecnologías estaban escritas a
+  // mano en el HTML y quedaron desfasadas (decía 0.2.0 en la 0.4.0).
+  ipcMain.handle('app:info', () => ({
+    version: app.getVersion(),
+    electron: process.versions.electron,
+    chromium: process.versions.chrome,
+    node: process.versions.node,
+    userData: app.getPath('userData'),
+    empaquetada: app.isPackaged,
+  }))
+  ipcMain.handle('update:check', () => checkNow())
+
+  ipcMain.on('open-external', (_, url) => {
+    if (typeof url === 'string' && /^https:\/\//.test(url)) shell.openExternal(url)
   })
 
   // ── Cachés en disco ───────────────────────────────────────────────────────

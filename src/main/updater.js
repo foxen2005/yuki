@@ -9,6 +9,26 @@ const { autoUpdater } = require('electron-updater')
 
 const CHECK_EVERY_MS = 4 * 60 * 60 * 1000
 
+// Versión ya descargada y esperando reinicio, para que el panel lo refleje
+let listaParaInstalar = null
+
+// Comprobación a demanda (botón "Buscar actualizaciones").
+// Estados: dev | lista | al-dia | error
+async function checkNow() {
+  if (!app.isPackaged || process.env.PORTABLE_EXECUTABLE_DIR) return { estado: 'dev' }
+  if (listaParaInstalar) return { estado: 'lista', version: listaParaInstalar }
+  try {
+    const r = await autoUpdater.checkForUpdates()
+    // isUpdateAvailable compara versiones de verdad. Con una simple desigualdad
+    // de cadenas, una release revertida (o un build local por delante de la
+    // publicada) se anunciaba como "descargando" para siempre.
+    if (r && r.isUpdateAvailable) return { estado: 'descargando', version: r.updateInfo.version }
+    return { estado: 'al-dia' }
+  } catch (e) {
+    return { estado: 'error', mensaje: e.message }
+  }
+}
+
 function setupUpdater(getWin) {
   if (!app.isPackaged || process.env.PORTABLE_EXECUTABLE_DIR) return
 
@@ -21,7 +41,10 @@ function setupUpdater(getWin) {
     if (win && !win.isDestroyed()) win.webContents.send(channel, payload)
   }
 
-  autoUpdater.on('update-downloaded', info => send('update:ready', { version: info.version }))
+  autoUpdater.on('update-downloaded', info => {
+    listaParaInstalar = info.version
+    send('update:ready', { version: info.version })
+  })
   autoUpdater.on('error', () => { /* sin internet o sin release compatible: silencioso, como SOS */ })
 
   ipcMain.on('update:install', () => {
@@ -34,4 +57,4 @@ function setupUpdater(getWin) {
   setInterval(check, CHECK_EVERY_MS)
 }
 
-module.exports = { setupUpdater }
+module.exports = { setupUpdater, checkNow }

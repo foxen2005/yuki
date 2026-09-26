@@ -30,6 +30,9 @@ contextBridge.exposeInMainWorld('yukiAPI', {
   setAutoSleep:  (minutes)           => ipcRenderer.invoke('view:set-auto-sleep', minutes),
   setSleepable:  (id, value)         => ipcRenderer.invoke('view:set-sleepable', id, value),
   setMemoryReporting: (enabled)      => ipcRenderer.invoke('view:set-memory-reporting', enabled),
+  appInfo:       ()                  => ipcRenderer.invoke('app:info'),
+  checkUpdate:   ()                  => ipcRenderer.invoke('update:check'),
+  openExternal:  (url)               => ipcRenderer.send('open-external', url),
   cacheUsage:    ()                  => ipcRenderer.invoke('cache:usage'),
   clearCaches:   (id)                => ipcRenderer.invoke('cache:clear', id),
 

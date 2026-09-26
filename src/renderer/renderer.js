@@ -498,6 +498,34 @@ function resizeImage(dataUrl, size, callback) {
 // el ancho de las vistas recortando por la derecha en lugar de mover el borde izquierdo.
 const SETTINGS_WIDTH = 400
 
+// ── Acerca de ─────────────────────────────────────────────────────────────────
+// Versión, motor y ruta de datos salen del proceso principal en cada apertura:
+// tenerlos escritos en el HTML ya provocó que el panel dijera 0.2.0 en la 0.4.0.
+async function renderAbout() {
+  const info = await window.yukiAPI.appInfo().catch(() => null)
+  if (!info) return
+  document.getElementById('about-version').textContent = info.version
+  document.getElementById('about-tech').textContent =
+    `Electron ${info.electron} · Chromium ${info.chromium} · Node ${info.node}`
+  document.getElementById('about-userdata').textContent = info.userData
+}
+
+async function checkUpdateUI() {
+  const el = document.getElementById('about-update-state')
+  const btn = document.getElementById('btn-check-update')
+  if (!el || !btn) return
+  el.className = ''
+  el.textContent = 'Comprobando…'
+  btn.disabled = true
+  const r = await window.yukiAPI.checkUpdate().catch(() => ({ estado: 'error' }))
+  btn.disabled = false
+  if (r.estado === 'al-dia') { el.className = 'ok'; el.textContent = 'Estás al día' }
+  else if (r.estado === 'lista') { el.className = 'nuevo'; el.textContent = `Yuki ${r.version} lista — reinicia para instalarla` }
+  else if (r.estado === 'descargando') { el.className = 'nuevo'; el.textContent = `Descargando Yuki ${r.version}…` }
+  else if (r.estado === 'dev') { el.textContent = 'Versión de desarrollo o portable: sin auto-update' }
+  else { el.textContent = 'No se pudo comprobar (¿sin conexión?)' }
+}
+
 // ── Cachés en disco ───────────────────────────────────────────────────────────
 // Chromium no libera solo la caché ni el CacheStorage de los Service Workers:
 // las particiones de las apps habían llegado a 9,4 GB sin forma de verlo.
@@ -567,6 +595,8 @@ async function openSettingsPanel() {
   window.yukiAPI.setMemoryReporting(true).catch(() => { })
   if (lastMemoryReport) updateMemoryUI(lastMemoryReport)
   renderCaches()
+  renderAbout()
+  checkUpdateUI()
   if (window.lucide) window.lucide.createIcons()
   const token = ++settingsOpenToken
 
@@ -926,6 +956,14 @@ function hideGoogleAuthBanner() {
     document.getElementById('btn-open-userdata').addEventListener('click', () => {
       window.yukiAPI.openUserdata()
     })
+    document.getElementById('btn-check-update').addEventListener('click', checkUpdateUI)
+
+    // Los enlaces de "Acerca de" abren en el navegador del sistema, no dentro de Yuki
+    document.querySelectorAll('a[data-ext]').forEach(a => a.addEventListener('click', e => {
+      e.preventDefault()
+      window.yukiAPI.openExternal(a.dataset.ext)
+    }))
+
     document.getElementById('btn-clear-caches').addEventListener('click', async () => {
       if (!confirm('¿Liberar las cachés de todas las apps?\nNo se cierra ninguna sesión; las apps solo volverán a descargar lo que necesiten.')) return
       const btn = document.getElementById('btn-clear-caches')

@@ -579,3 +579,26 @@ body {
 .cache-item .mb { color: var(--text-muted); }
 .cache-item button { background: none; border: 1px solid var(--border-color); color: var(--text-muted); border-radius: 6px; padding: 2px 8px; font-size: 11px; cursor: pointer; transition: var(--transition); }
 .cache-item button:hover { border-color: var(--primary); color: var(--text-main); }
+
+/* ── Acerca de ── */
+.about-card { gap: 0; }
+.about-head { display: flex; align-items: center; gap: 14px; padding: 4px 0 14px; }
+.about-logo { width: 48px; height: 48px; border-radius: var(--radius-md); object-fit: contain; }
+.about-name { font-size: 15px; font-weight: 700; color: var(--text-main); }
+.about-ver { font-size: 12px; color: var(--accent); font-weight: 600; }
+.about-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.about-sec { border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.about-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
+.about-update { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-dim); }
+.about-update span { flex: 1; }
+.about-update span.ok { color: #4ade80; }
+.about-update span.nuevo { color: var(--accent); font-weight: 600; }
+.about-links { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; }
+.about-links a { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim); text-decoration: none; transition: var(--transition); }
+.about-links a:hover { color: var(--primary-hover); }
+.about-links .icon-lucide { width: 13px; height: 13px; flex-shrink: 0; }
+.about-keys { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 12px; font-size: 11px; color: var(--text-dim); }
+.about-keys kbd { background: var(--bg-card); border: 1px solid var(--border-color); border-bottom-width: 2px; border-radius: 4px; padding: 1px 5px; font-size: 10px; color: var(--text-main); font-family: inherit; margin-right: 2px; }
+.about-note { font-size: 10px; color: var(--text-muted); font-style: italic; }
+.about-tech { font-size: 11px; color: var(--text-dim); word-break: break-all; }
+.about-foot { border-top: 1px solid var(--border-color); margin-top: 12px; padding-top: 10px; text-align: center; font-size: 10px; color: var(--text-muted); }

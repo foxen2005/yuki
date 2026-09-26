@@ -390,32 +390,58 @@
 
         <!-- Acerca de -->
         <div class="section-title" style="margin-top:24px">Acerca de Yuki</div>
-        <div class="settings-card" style="gap:0">
-          <div style="display:flex;align-items:center;gap:14px;padding:4px 0 12px">
-            <div style="font-size:36px;line-height:1"><i data-lucide="flower" class="icon-lucide" style="width:48px;height:48px"></i></div>
+        <div class="settings-card about-card">
+
+          <div class="about-head">
+            <img src="../../icons/icon.png" alt="" aria-hidden="true" class="about-logo" />
             <div>
-              <div style="font-size:15px;font-weight:700;color:#e9edef">Yuki</div>
-              <div style="font-size:12px;color:var(--accent);font-weight:600">Versión 0.2.0</div>
-              <div style="font-size:11px;color:#667781;margin-top:2px">Multi-app desktop client</div>
+              <div class="about-name">Yuki</div>
+              <div class="about-ver">Versión <span id="about-version">…</span></div>
+              <div class="about-sub">Todas tus apps web en una sola ventana</div>
             </div>
           </div>
-          <div style="border-top:1px solid var(--border-color);padding-top:12px;display:flex;flex-direction:column;gap:8px">
-            <div style="font-size:11px;font-weight:700;color:#667781;text-transform:uppercase;letter-spacing:0.6px">Atajos de teclado</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px">
-              <div style="font-size:11px;color:#aebac1"><kbd style="background:var(--bg-card);border-radius:4px;padding:1px 5px;font-size:10px;color:#e9edef">Ctrl+1…9</kbd> Cambiar app</div>
-              <div style="font-size:11px;color:#aebac1"><kbd style="background:var(--bg-card);border-radius:4px;padding:1px 5px;font-size:10px;color:#e9edef">F12</kbd> DevTools principal</div>
-              <div style="font-size:11px;color:#aebac1"><kbd style="background:var(--bg-card);border-radius:4px;padding:1px 5px;font-size:10px;color:#e9edef">Ctrl+Shift+I</kbd> DevTools app</div>
-              <div style="font-size:11px;color:#aebac1"><kbd style="background:var(--bg-card);border-radius:4px;padding:1px 5px;font-size:10px;color:#e9edef"><i data-lucide="settings" class="icon-lucide"></i> clic</kbd> Este panel</div>
+
+          <div class="about-sec">
+            <div class="about-label">Actualizaciones</div>
+            <div class="about-update">
+              <span id="about-update-state">Comprobando…</span>
+              <button class="backup-btn" id="btn-check-update">Buscar</button>
             </div>
           </div>
-          <div style="border-top:1px solid var(--border-color);margin-top:12px;padding-top:12px;display:flex;flex-direction:column;gap:4px">
-            <div style="font-size:11px;font-weight:700;color:#667781;text-transform:uppercase;letter-spacing:0.6px">Tecnología</div>
-            <div style="font-size:11px;color:#aebac1">Electron 35 · WebContentsView · Node.js 22</div>
-            <div style="font-size:11px;color:#aebac1">contextIsolation · safeStorage PIN</div>
+
+          <div class="about-sec">
+            <div class="about-label">Enlaces</div>
+            <div class="about-links">
+              <a href="#" data-ext="https://foxen2005.github.io/yuki/"><i data-lucide="globe" class="icon-lucide"></i> Sitio web y descargas</a>
+              <a href="#" data-ext="https://github.com/foxen2005/yuki/releases/latest"><i data-lucide="sparkles" class="icon-lucide"></i> Novedades de esta versión</a>
+              <a href="#" data-ext="https://github.com/foxen2005/yuki/issues/new"><i data-lucide="bug" class="icon-lucide"></i> Reportar un problema</a>
+              <a href="#" data-ext="https://github.com/foxen2005/yuki"><i data-lucide="code" class="icon-lucide"></i> Código fuente (MIT)</a>
+            </div>
           </div>
-          <div style="border-top:1px solid var(--border-color);margin-top:12px;padding-top:10px;text-align:center">
-            <div style="font-size:10px;color:#667781">© 2025 Digital Fox Studio · github.com/foxen2005/yuki</div>
+
+          <div class="about-sec">
+            <div class="about-label">Atajos de teclado</div>
+            <div class="about-keys">
+              <div><kbd>Ctrl</kbd><kbd>1</kbd>…<kbd>9</kbd> Cambiar de app</div>
+              <div><kbd>Esc</kbd> Cerrar este panel</div>
+              <div><kbd>Enter</kbd> Confirmar el PIN</div>
+              <div><kbd>Tab</kbd> Recorrer el catálogo</div>
+            </div>
+            <div class="about-note">Solo funcionan con Yuki en primer plano: nunca se capturan teclas de otras aplicaciones.</div>
           </div>
+
+          <div class="about-sec">
+            <div class="about-label">Tecnología</div>
+            <div class="about-tech" id="about-tech">…</div>
+            <div class="about-tech">contextIsolation · sandbox · PIN cifrado con safeStorage</div>
+          </div>
+
+          <div class="about-sec">
+            <div class="about-label">Datos</div>
+            <div class="about-tech" id="about-userdata">…</div>
+          </div>
+
+          <div class="about-foot">© 2025-2026 Digital Fox · Licencia MIT</div>
         </div>
 
       </div>
