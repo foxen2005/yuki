@@ -12,6 +12,12 @@ class ViewManager {
     this._activeId = null
     this._autoSleepMs = 30 * 60 * 1000
     this._monitorInterval = null
+    // getProcessMemoryInfo() de cada vista solo se pide cuando el panel de
+    // Configuración está abierto: es lo único que mira esos datos.
+    this._reportMemory = false
+    // Una vista dormida sigue teniendo su proceso vivo (~50 MB). Tras estas
+    // horas se destruye entera y se recrea sola cuando el usuario vuelve.
+    this._deepSleepMs = 2 * 60 * 60 * 1000
     // Layout vigente pedido por el renderer (72 = normal; 9999 = vistas ocultas
     // porque settings o el lock están abiertos). Se recuerda para que activate()
     // y el resize de la ventana no devuelvan la vista encima del panel.
@@ -86,6 +92,7 @@ class ViewManager {
       entry.view.webContents.loadURL(wakeUrl)
       entry.sleeping = false
       entry.sleepUrl = null
+      entry.sleepSince = null
     }
 
     // Ocultar todas las otras vistas
@@ -118,6 +125,7 @@ class ViewManager {
     entry.sleepUrl = (currentUrl && currentUrl !== 'about:blank') ? currentUrl : entry.url
     entry.view.webContents.loadURL('about:blank')
     entry.sleeping = true
+    entry.sleepSince = Date.now()
 
     if (entry.visible) {
       this.win.contentView.removeChildView(entry.view)
@@ -189,6 +197,26 @@ class ViewManager {
     if (entry) entry.view.webContents.openDevTools()
   }
 
+  setMemoryReporting(enabled) {
+    this._reportMemory = !!enabled
+    // Un informe inmediato: si no, el panel mostraría el del ciclo anterior
+    // (hasta 30 s viejo, con vistas que quizá ya se destruyeron).
+    if (this._reportMemory) this._sendMemoryReport()
+  }
+
+  async _sendMemoryReport() {
+    if (!this._reportMemory || this.win.isDestroyed() || !this.win.isVisible()) return
+    const report = []
+    for (const [id, entry] of this.views) {
+      if (entry.sleeping) continue
+      try {
+        const info = await entry.view.webContents.getProcessMemoryInfo()
+        report.push({ id, privateMB: Math.round(info.private / 1024) })
+      } catch(e) {}
+    }
+    if (!this.win.isDestroyed()) this.win.webContents.send('view:memory-report', report)
+  }
+
   setSleepable(id, value) {
     const entry = this.views.get(id)
     if (entry) entry.sleepable = !!value
@@ -202,18 +230,9 @@ class ViewManager {
     this._monitorInterval = setInterval(async () => {
       await this._checkAutoDeepSleep()
 
-      const report = []
-      for (const [id, entry] of this.views) {
-        if (entry.sleeping) continue
-        try {
-          const info = await entry.view.webContents.getProcessMemoryInfo()
-          report.push({ id, privateMB: Math.round(info.private / 1024) })
-        } catch(e) {}
-      }
-      // Enviar también vacío para que la lista muestre 'Sin apps activas'
-      if (!this.win.isDestroyed()) {
-        this.win.webContents.send('view:memory-report', report)
-      }
+      // Sin panel abierto o con la ventana oculta no hay a quién informar:
+      // se evita consultar la memoria de cada proceso y el IPC.
+      await this._sendMemoryReport()
     }, intervalMs)
   }
 
@@ -225,8 +244,18 @@ class ViewManager {
   }
 
   async _checkAutoDeepSleep() {
-    if (!this._autoSleepMs) return
     const now = Date.now()
+
+    // Sueño profundo: una vista lleva horas dormida → destruirla libera su
+    // proceso completo, no solo la página. Se recrea al volver a abrirla.
+    for (const [id, entry] of this.views) {
+      if (id === this._activeId || !entry.sleeping || !entry.sleepSince) continue
+      if (now - entry.sleepSince < this._deepSleepMs) continue
+      this.destroy(id)
+      if (!this.win.isDestroyed()) this.win.webContents.send('view:destroyed', { id })
+    }
+
+    if (!this._autoSleepMs) return
     for (const [id, entry] of this.views) {
       if (id === this._activeId) continue
       if (entry.sleeping) continue
@@ -256,6 +285,10 @@ class ViewManager {
     })
 
     wc.on('did-navigate', (_, navUrl) => {
+      // Una navegación real descarta la CSS insertada: hay que permitir que se
+      // vuelva a inyectar (dormir, despertar, recargar y limpiar sesión pasan por aquí).
+      const e = this.views.get(id)
+      if (e) e.cssWhatsApp = false
       if (!this.win.isDestroyed()) {
         this.win.webContents.send('view:navigate', { id, url: navUrl })
         // Detectar redirección a login de Google
@@ -323,7 +356,11 @@ class ViewManager {
 
   _injectCSS(view, id) {
     const url = view.webContents.getURL()
-    if (url.includes('web.whatsapp.com')) {
+    // did-stop-loading se dispara en cada navegación; sin este guard cada
+    // recarga añadía otra hoja de estilo que nunca se quitaba.
+    const entry = this.views.get(id)
+    if (url.includes('web.whatsapp.com') && entry && !entry.cssWhatsApp) {
+      entry.cssWhatsApp = true
       view.webContents.insertCSS(
         '[data-testid="app-download-banner"],[data-testid="banner-container"],' +
         'a[href*="whatsapp.com/dl"],div:has(>a[href*="whatsapp.com/dl"]){display:none!important}'

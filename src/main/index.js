@@ -27,6 +27,9 @@ app.commandLine.appendSwitch('disable-features', [
   'WebAuthnTouchId',
 ].join(','))
 app.commandLine.appendSwitch('enable-features', 'NetworkService,NetworkServiceInProcess')
+// Sin esto Chromium dimensiona la caché en disco según el espacio libre y
+// crece sin freno: las particiones de las apps llegaron a 9,4 GB.
+app.commandLine.appendSwitch('disk-cache-size', String(200 * 1024 * 1024))
 
 app.whenReady().then(() => {
   spoofSession(session.defaultSession)
@@ -43,17 +46,14 @@ app.whenReady().then(() => {
   setupAutosave({ win, viewManager })
   setupUpdater(getWin)
 
-  // Flush periódico de sesiones cada 60s — protege contra apagados bruscos
+  // Flush periódico de sesiones cada 60s — protege contra apagados bruscos.
+  // Antes se preguntaba la lista de apps al renderer con executeJavaScript en
+  // cada vuelta; las vistas creadas son justo las que tienen algo que volcar.
   setInterval(() => {
     if (!win || win.isDestroyed()) return
-    win.webContents.executeJavaScript(
-      `JSON.parse(localStorage.getItem('yuki-apps') || '[]')`
-    ).then(apps => {
-      if (!Array.isArray(apps)) return
-      apps.forEach(a => {
-        try { session.fromPartition(`persist:${a.id}`).flushStorageData() } catch(e) {}
-      })
-    }).catch(() => {})
+    for (const id of viewManager.views.keys()) {
+      try { session.fromPartition(`persist:${id}`).flushStorageData() } catch(e) {}
+    }
   }, 60000)
 })
 

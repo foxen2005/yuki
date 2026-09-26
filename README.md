@@ -32,7 +32,8 @@ Requiere Windows 10/11 x64. El ejecutable aún no está firmado, así que SmartS
 ## Qué hace
 
 - **Sesiones persistentes** — cada app tiene su propia partición de Chromium. Cookies y login sobreviven al reinicio; puedes tener dos Gmail con cuentas distintas.
-- **RAM bajo control** — monitor de memoria por app y auto-sleep configurable (por app y por minutos de inactividad). Las apps dormidas despiertan donde estaban.
+- **RAM bajo control** — monitor de memoria por app y auto-sleep configurable (por app y por minutos de inactividad). Las apps dormidas despiertan donde estaban, y tras 2 h de sueño se libera su proceso completo.
+- **Disco bajo control** — límite de caché de 200 MB por app y un botón para liberar cachés (incluido el CacheStorage de los Service Workers) sin cerrar sesión en ninguna app.
 - **Bloqueo con PIN** — al minimizar, pide PIN al restaurar. El PIN se guarda cifrado con `safeStorage` (llavero de Windows).
 - **Notificaciones nativas** — reenviadas desde las apps web, con sonido configurable (o el tuyo), volumen y No molestar.
 - **Corrector ortográfico** — español (es-419) + inglés; click derecho sobre la palabra subrayada muestra sugerencias, en cualquier app.

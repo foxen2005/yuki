@@ -99,6 +99,13 @@ function esc(str) {
 // ── Render icon ───────────────────────────────────────────────────────────────
 function renderIconHTML(icon) {
   if (icon && icon.startsWith('data:image')) return `<img src="${icon}" alt="" aria-hidden="true" />`
+  // app:<slug> → PNG plano de 64×64 en icons/apps/. Se guarda la RUTA, no los
+  // bytes: Chromium mantiene UNA sola copia decodificada compartida por todos
+  // los usos, y localStorage queda en bytes en vez de megas de base64.
+  if (icon && icon.startsWith('app:')) {
+    const slug = icon.slice(4).replace(/[^a-z0-9-]/gi, '')   // evita salirse de la carpeta
+    return `<img src="../../icons/apps/${slug}.png" alt="" aria-hidden="true" />`
+  }
   if (icon && icon.startsWith('lucide:')) return `<i data-lucide="${esc(icon.split(':')[1])}" class="icon-lucide"></i>`
   return icon ? esc(icon) : '<i data-lucide="globe" class="icon-lucide"></i>'
 }
@@ -491,6 +498,36 @@ function resizeImage(dataUrl, size, callback) {
 // el ancho de las vistas recortando por la derecha en lugar de mover el borde izquierdo.
 const SETTINGS_WIDTH = 400
 
+// ── Cachés en disco ───────────────────────────────────────────────────────────
+// Chromium no libera solo la caché ni el CacheStorage de los Service Workers:
+// las particiones de las apps habían llegado a 9,4 GB sin forma de verlo.
+async function renderCaches() {
+  const list = document.getElementById('cache-list')
+  const total = document.getElementById('cache-total')
+  if (!list || !total) return
+  const items = await window.yukiAPI.cacheUsage().catch(() => [])
+  const suma = items.reduce((a, b) => a + b.mb, 0)
+  total.textContent = suma > 1024
+    ? `${(suma / 1024).toFixed(1)} GB en total — se puede liberar sin cerrar sesión`
+    : `${suma} MB en total — se puede liberar sin cerrar sesión`
+  const apps = loadApps()
+  list.innerHTML = items.filter(i => i.mb >= 1).map(i => {
+    const app = apps.find(a => a.id === i.id)
+    const mb = i.mb > 1024 ? `${(i.mb / 1024).toFixed(1)} GB` : `${i.mb} MB`
+    return `<div class="cache-item">
+      <span class="nom">${esc(app ? app.name : i.id)}</span>
+      <span class="mb">${mb}</span>
+      <button data-id="${esc(i.id)}">Liberar</button>
+    </div>`
+  }).join('')
+  list.querySelectorAll('button[data-id]').forEach(b => b.addEventListener('click', async () => {
+    b.disabled = true; b.textContent = '...'
+    await window.yukiAPI.clearCaches(b.dataset.id)
+    showToast('Caché liberada')
+    renderCaches()
+  }))
+}
+
 // ── Editor de permisos de sitios ──────────────────────────────────────────────
 async function renderPermissions() {
   const list = document.getElementById('permissions-list')
@@ -526,6 +563,10 @@ let settingsOpenToken = 0
 async function openSettingsPanel() {
   renderServicesList(loadApps())
   renderPermissions()
+  // El monitor de RAM solo trabaja mientras el panel está abierto
+  window.yukiAPI.setMemoryReporting(true).catch(() => { })
+  if (lastMemoryReport) updateMemoryUI(lastMemoryReport)
+  renderCaches()
   if (window.lucide) window.lucide.createIcons()
   const token = ++settingsOpenToken
 
@@ -566,6 +607,8 @@ function toggleSettings() {
   if (!isOpen) {
     openSettingsPanel()
   } else {
+    window.yukiAPI.setMemoryReporting(false).catch(() => { })
+  lastMemoryReport = null   // al reabrir llega uno nuevo en el acto
     settingsOpenToken++
     syncViewLayout()
     const overlay = document.getElementById('settings-content-overlay')
@@ -578,6 +621,8 @@ function toggleSettings() {
 function closeSettings() {
   document.getElementById('settings-overlay').classList.remove('open')
   document.getElementById('settings-toggle').classList.remove('open')
+  window.yukiAPI.setMemoryReporting(false).catch(() => { })
+  lastMemoryReport = null   // al reabrir llega uno nuevo en el acto
   settingsOpenToken++
   syncViewLayout()
   const overlay = document.getElementById('settings-content-overlay')
@@ -636,9 +681,17 @@ function playNotificationSound() {
 }
 
 // ── Memoria RAM ───────────────────────────────────────────────────────────────
+// Último informe recibido, para pintarlo al abrir Configuración sin esperar
+// al siguiente tick del monitor.
+let lastMemoryReport = null
 function updateMemoryUI(report) {
   const list = document.getElementById('memory-list')
   if (!list) return
+  lastMemoryReport = report
+  // Esta lista solo se ve dentro de Configuración. Antes este innerHTML corría
+  // cada 30 s aunque el panel estuviera cerrado, re-inyectando el ícono de cada
+  // app y forzando a Chromium a decodificarlos de nuevo una y otra vez.
+  if (!document.getElementById('settings-overlay').classList.contains('open')) return
   if (!report || !report.length) {
     list.innerHTML = '<div style="font-size:11px;color:#667781">Sin apps activas</div>'
     return
@@ -873,6 +926,16 @@ function hideGoogleAuthBanner() {
     document.getElementById('btn-open-userdata').addEventListener('click', () => {
       window.yukiAPI.openUserdata()
     })
+    document.getElementById('btn-clear-caches').addEventListener('click', async () => {
+      if (!confirm('¿Liberar las cachés de todas las apps?\nNo se cierra ninguna sesión; las apps solo volverán a descargar lo que necesiten.')) return
+      const btn = document.getElementById('btn-clear-caches')
+      btn.disabled = true; btn.textContent = 'Liberando...'
+      await window.yukiAPI.clearCaches(null)
+      btn.disabled = false; btn.textContent = 'Liberar'
+      showToast('Cachés liberadas')
+      renderCaches()
+    })
+
     document.getElementById('btn-reset-permissions').addEventListener('click', async () => {
       if (!confirm('¿Olvidar todas las decisiones de cámara, micrófono y ubicación?\nLos sitios volverán a preguntar.')) return
       await window.yukiAPI.resetPermissions()
@@ -963,6 +1026,13 @@ window.yukiAPI.on('update:ready', ({ version }) => {
   document.getElementById('toast-update-btn').addEventListener('click', () => window.yukiAPI.installUpdate())
 })
 
+// El proceso principal destruye las vistas que llevan horas dormidas para
+// liberar su proceso entero; hay que olvidarlas para poder recrearlas.
+window.yukiAPI.on('view:destroyed', ({ id }) => {
+  createdViews.delete(id)
+  if (activeId === id) activeId = null
+})
+
 window.yukiAPI.on('switch-app-index', (index) => {
   const apps = loadApps()
   if (apps[index]) switchTo(apps[index].id)
@@ -970,32 +1040,6 @@ window.yukiAPI.on('switch-app-index', (index) => {
 
 
 // ── Iconos por defecto ────────────────────────────────────────────────────────
-const DEFAULT_ICONS = {
-  whatsapp: { file: '../../icons/wired-flat-2543-logo-whatsapp-hover-pinch.apng', elId: 'cat-icon-whatsapp' },
-  gmail: { file: '../../icons/wired-flat-3090-document-letter-hover-pinch.apng', elId: 'cat-icon-gmail' },
-}
-const loadedIcons = {}
-
-async function loadDefaultIcons() {
-  for (const [key, { file, elId }] of Object.entries(DEFAULT_ICONS)) {
-    try {
-      const res = await fetch(file)
-      if (!res.ok) continue
-      const blob = await res.blob()
-      const b64 = await new Promise(resolve => {
-        const reader = new FileReader()
-        reader.onload = e => resolve(e.target.result)
-        reader.readAsDataURL(blob)
-      })
-      loadedIcons[key] = b64
-      const el = document.getElementById(elId)
-      if (el) el.innerHTML = `<img src="${b64}" style="width:28px;height:28px;object-fit:contain;" />`
-      const item = document.querySelector(`[data-icon-key="${key}"]`)
-      if (item) item.dataset.icon = b64
-    } catch (e) { }
-  }
-}
-
 // ── Migraciones ───────────────────────────────────────────────────────────────
 function migrateUrls() {
   const apps = loadApps()
@@ -1007,6 +1051,42 @@ function migrateUrls() {
     'https://accounts.google.com/signin/v2/identifier?service=mail&flowName=GlifWebSignIn&flowEntry=ServiceLogin&continue=https://mail.google.com/mail/': 'https://mail.google.com/mail/u/0/',
   }
   apps.forEach(app => { if (fixes[app.url]) { app.url = fixes[app.url]; changed = true } })
+  if (changed) saveApps(apps)
+}
+
+// Íconos por dominio, para migrar los APNG viejos a los PNG planos del catálogo
+const ICON_BY_HOST = [
+  ['web.whatsapp.com', 'whatsapp'], ['web.telegram.org', 'telegram'], ['discord.com', 'discord'],
+  ['slack.com', 'slack'], ['teams.microsoft.com', 'microsoftteams'], ['signal.org', 'signal'],
+  ['skype.com', 'skype'], ['messenger.com', 'messenger'], ['instagram.com', 'instagram'],
+  ['x.com', 'x'], ['linkedin.com', 'linkedin'], ['mail.google.com', 'gmail'],
+  ['outlook.live.com', 'microsoftoutlook'], ['outlook.office.com', 'microsoftoutlook'],
+  ['mail.proton.me', 'protonmail'], ['mail.yahoo.com', 'yahoo'], ['notion.so', 'notion'],
+  ['trello.com', 'trello'], ['asana.com', 'asana'], ['todoist.com', 'todoist'],
+  ['calendar.google.com', 'googlecalendar'], ['drive.google.com', 'googledrive'],
+  ['atlassian.com', 'jira'], ['github.com', 'github'], ['figma.com', 'figma'],
+  ['meet.google.com', 'googlemeet'], ['zoom.us', 'zoom'], ['webex.com', 'webex'],
+]
+
+// Los íconos animados (.apng de 400×400 y 61 fotogramas) ocupaban 37 MB de RAM
+// descomprimidos CADA UNO y se guardaban como base64 en localStorage. Se
+// reemplazan por la ruta al PNG plano equivalente.
+function migrateHeavyIcons() {
+  const apps = loadApps()
+  let changed = false
+  apps.forEach(app => {
+    // Solo los APNG animados, que son el problema real. Un PNG subido por el
+    // usuario se deja como está: sustituirlo por una heurística de tamaño le
+    // borraría su ícono propio.
+    if (!(app.icon || '').startsWith('data:image/apng')) return
+    let host = ''
+    try { host = new URL(app.url).hostname } catch (e) { }
+    // Host exacto o subdominio: con includes(), 'x.com' casaba dentro de
+    // 'web.webex.com' y Webex terminaba con el logo de X.
+    const hit = ICON_BY_HOST.find(([h]) => host === h || host.endsWith('.' + h))
+    app.icon = hit ? 'app:' + hit[1] : 'lucide:globe'
+    changed = true
+  })
   if (changed) saveApps(apps)
 }
 
@@ -1062,12 +1142,15 @@ async function init() {
     migrateBrandIcons()
     localStorage.setItem('yuki-icons-migrated', '1')
   }
+  if (!localStorage.getItem('yuki-icons-files')) {
+    migrateHeavyIcons()
+    localStorage.setItem('yuki-icons-files', '1')
+  }
 
   // Inicializar auto-sleep en el proceso principal
   const autoSleepMinutes = loadSettings().autoSleepMinutes ?? 30
   window.yukiAPI.setAutoSleep(autoSleepMinutes)
 
-  await loadDefaultIcons()
   render()
 }
 

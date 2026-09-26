@@ -14,6 +14,7 @@ const ALLOWED_EVENTS = [
   'view:memory-report',
   'session:cleared',
   'update:ready',
+  'view:destroyed',
 ]
 
 contextBridge.exposeInMainWorld('yukiAPI', {
@@ -28,6 +29,9 @@ contextBridge.exposeInMainWorld('yukiAPI', {
   openDevTools:(id)                 => ipcRenderer.invoke('view:devtools', id),
   setAutoSleep:  (minutes)           => ipcRenderer.invoke('view:set-auto-sleep', minutes),
   setSleepable:  (id, value)         => ipcRenderer.invoke('view:set-sleepable', id, value),
+  setMemoryReporting: (enabled)      => ipcRenderer.invoke('view:set-memory-reporting', enabled),
+  cacheUsage:    ()                  => ipcRenderer.invoke('cache:usage'),
+  clearCaches:   (id)                => ipcRenderer.invoke('cache:clear', id),
 
   // ── Google Auth ──────────────────────────────────────────────────────────
   openGoogleAuth: (partition, clearFirst) =>

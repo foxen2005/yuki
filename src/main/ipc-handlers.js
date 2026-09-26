@@ -37,6 +37,68 @@ function registerHandlers({ win, viewManager }) {
   ipcMain.handle('view:set-sleepable', (_, id, value) => {
     viewManager.setSleepable(id, value)
   })
+  ipcMain.handle('view:set-memory-reporting', (_, enabled) => {
+    viewManager.setMemoryReporting(enabled)
+  })
+
+  // ── Cachés en disco ───────────────────────────────────────────────────────
+  // Mide y libera lo que ocupan las apps SIN tocar cookies ni IndexedDB, que
+  // es donde vive la sesión: limpiar aquí no desloguea de nada.
+  // Asíncrono a propósito: estas carpetas tienen decenas de miles de archivos
+  // y con readdirSync/statSync el proceso principal se congelaba varios
+  // segundos al abrir Configuración. Con await el bucle de eventos respira.
+  const dirSize = async (dir) => {
+    let total = 0
+    const stack = [dir]
+    while (stack.length) {
+      const d = stack.pop()
+      let entries = []
+      try { entries = await fs.promises.readdir(d, { withFileTypes: true }) } catch(e) { continue }
+      for (const e of entries) {
+        const p = path.join(d, e.name)
+        if (e.isDirectory()) { stack.push(p); continue }
+        try { total += (await fs.promises.stat(p)).size } catch(e) {}
+      }
+    }
+    return total
+  }
+
+  let usageEnCurso = null
+  ipcMain.handle('cache:usage', async () => {
+    // Abrir y cerrar Configuración varias veces lanzaba un recorrido nuevo
+    // cada vez y saturaba el pool de hilos de libuv. Se reutiliza el que corre.
+    if (usageEnCurso) return usageEnCurso
+    usageEnCurso = (async () => {
+    const root = path.join(app.getPath('userData'), 'Partitions')
+    let dirs = []
+    try { dirs = (await fs.promises.readdir(root, { withFileTypes: true })).filter(d => d.isDirectory()) }
+    catch(e) { return [] }
+    const out = []
+    for (const d of dirs) {
+      out.push({ id: d.name, mb: Math.round((await dirSize(path.join(root, d.name))) / 1048576) })
+    }
+      return out.sort((a, b) => b.mb - a.mb)
+    })()
+    try { return await usageEnCurso } finally { usageEnCurso = null }
+  })
+
+  ipcMain.handle('cache:clear', async (_, id) => {
+    const targets = id ? [id] : (() => {
+      const root = path.join(app.getPath('userData'), 'Partitions')
+      try { return fs.readdirSync(root, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name) }
+      catch(e) { return [] }
+    })()
+    for (const t of targets) {
+      try {
+        const ses = session.fromPartition(`persist:${t}`)
+        await ses.clearCache()
+        // cachestorage = los Service Workers de WhatsApp (GBs). No se tocan
+        // cookies, localstorage ni indexeddb: la sesión sobrevive.
+        await ses.clearStorageData({ storages: ['cachestorage', 'shadercache'] })
+      } catch(e) {}
+    }
+    return { ok: true }
+  })
 
   // ── Google Auth ────────────────────────────────────────────────────────────
   ipcMain.on('open-google-auth', (_, { partition, clearFirst }) => {

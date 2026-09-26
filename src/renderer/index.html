@@ -235,6 +235,19 @@
           </div>
           <div class="settings-row">
             <div class="settings-label">
+              <span class="settings-icon">💾</span>
+              <div>
+                <div class="settings-name">Cachés en disco</div>
+                <div class="settings-desc" id="cache-total">Calculando...</div>
+              </div>
+            </div>
+            <div class="settings-control">
+              <button class="backup-btn" id="btn-clear-caches">Liberar</button>
+            </div>
+          </div>
+          <div id="cache-list" style="padding:0 4px"></div>
+          <div class="settings-row">
+            <div class="settings-label">
               <span class="settings-icon">🎙️</span>
               <div>
                 <div class="settings-name">Permisos de sitios</div>
@@ -255,101 +268,101 @@
 
         <div class="catalog-section-label">Mensajería</div>
         <div class="catalog-grid" id="catalog-grid">
-          <div class="catalog-item" role="button" tabindex="0" data-name="WhatsApp" data-icon-key="whatsapp" data-icon="lucide:message-circle" data-url="https://web.whatsapp.com">
-            <div class="icon" id="cat-icon-whatsapp"><i data-lucide="message-circle" class="icon-lucide"></i></div><div class="name">WhatsApp</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="WhatsApp" data-icon="app:whatsapp" data-url="https://web.whatsapp.com">
+            <div class="icon"><img src="../../icons/apps/whatsapp.png" alt="" aria-hidden="true" /></div><div class="name">WhatsApp</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Telegram" data-icon="lucide:send" data-url="https://web.telegram.org/k/">
-            <div class="icon"><i data-lucide="send" class="icon-lucide"></i></div><div class="name">Telegram</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Telegram" data-icon="app:telegram" data-url="https://web.telegram.org/k/">
+            <div class="icon"><img src="../../icons/apps/telegram.png" alt="" aria-hidden="true" /></div><div class="name">Telegram</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Discord" data-icon="lucide:gamepad-2" data-url="https://discord.com/app">
-            <div class="icon"><i data-lucide="gamepad-2" class="icon-lucide"></i></div><div class="name">Discord</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Discord" data-icon="app:discord" data-url="https://discord.com/app">
+            <div class="icon"><img src="../../icons/apps/discord.png" alt="" aria-hidden="true" /></div><div class="name">Discord</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Slack" data-icon="lucide:message-square" data-url="https://app.slack.com">
-            <div class="icon"><i data-lucide="message-square" class="icon-lucide"></i></div><div class="name">Slack</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Slack" data-icon="app:slack" data-url="https://app.slack.com">
+            <div class="icon"><img src="../../icons/apps/slack.png" alt="" aria-hidden="true" /></div><div class="name">Slack</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Microsoft Teams" data-icon="lucide:users" data-url="https://teams.microsoft.com">
-            <div class="icon"><i data-lucide="users" class="icon-lucide"></i></div><div class="name">Teams</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Microsoft Teams" data-icon="app:microsoftteams" data-url="https://teams.microsoft.com">
+            <div class="icon"><img src="../../icons/apps/microsoftteams.png" alt="" aria-hidden="true" /></div><div class="name">Teams</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Signal" data-icon="lucide:shield" data-url="https://app.signal.org">
-            <div class="icon"><i data-lucide="shield" class="icon-lucide"></i></div><div class="name">Signal</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Signal" data-icon="app:signal" data-url="https://app.signal.org">
+            <div class="icon"><img src="../../icons/apps/signal.png" alt="" aria-hidden="true" /></div><div class="name">Signal</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Skype" data-icon="lucide:phone-call" data-url="https://web.skype.com">
-            <div class="icon"><i data-lucide="phone-call" class="icon-lucide"></i></div><div class="name">Skype</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Skype" data-icon="app:skype" data-url="https://web.skype.com">
+            <div class="icon"><img src="../../icons/apps/skype.png" alt="" aria-hidden="true" /></div><div class="name">Skype</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Messenger" data-icon="lucide:message-circle-more" data-url="https://www.messenger.com">
-            <div class="icon"><i data-lucide="message-circle-more" class="icon-lucide"></i></div><div class="name">Messenger</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Messenger" data-icon="app:messenger" data-url="https://www.messenger.com">
+            <div class="icon"><img src="../../icons/apps/messenger.png" alt="" aria-hidden="true" /></div><div class="name">Messenger</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Instagram" data-icon="lucide:camera" data-url="https://www.instagram.com/direct/inbox/">
-            <div class="icon"><i data-lucide="camera" class="icon-lucide"></i></div><div class="name">Instagram</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Instagram" data-icon="app:instagram" data-url="https://www.instagram.com/direct/inbox/">
+            <div class="icon"><img src="../../icons/apps/instagram.png" alt="" aria-hidden="true" /></div><div class="name">Instagram</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="X / Twitter" data-icon="lucide:at-sign" data-url="https://x.com/messages">
-            <div class="icon"><i data-lucide="at-sign" class="icon-lucide"></i></div><div class="name">X DMs</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="X / Twitter" data-icon="app:x" data-url="https://x.com/messages">
+            <div class="icon"><img src="../../icons/apps/x.png" alt="" aria-hidden="true" /></div><div class="name">X DMs</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="LinkedIn" data-icon="lucide:briefcase" data-url="https://www.linkedin.com/messaging/">
-            <div class="icon"><i data-lucide="briefcase" class="icon-lucide"></i></div><div class="name">LinkedIn</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="LinkedIn" data-icon="app:linkedin" data-url="https://www.linkedin.com/messaging/">
+            <div class="icon"><img src="../../icons/apps/linkedin.png" alt="" aria-hidden="true" /></div><div class="name">LinkedIn</div>
           </div>
         </div>
 
         <div class="catalog-section-label">Email</div>
         <div class="catalog-grid">
-          <div class="catalog-item" role="button" tabindex="0" data-name="Gmail" data-icon-key="gmail" data-icon="lucide:mail" data-url="https://mail.google.com/mail/u/0/">
-            <div class="icon" id="cat-icon-gmail"><i data-lucide="mail" class="icon-lucide"></i></div><div class="name">Gmail</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Gmail" data-icon="app:gmail" data-url="https://mail.google.com/mail/u/0/">
+            <div class="icon"><img src="../../icons/apps/gmail.png" alt="" aria-hidden="true" /></div><div class="name">Gmail</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Outlook" data-icon="lucide:mail" data-url="https://outlook.live.com/mail/">
-            <div class="icon"><i data-lucide="mail" class="icon-lucide"></i></div><div class="name">Outlook</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Outlook" data-icon="app:microsoftoutlook" data-url="https://outlook.live.com/mail/">
+            <div class="icon"><img src="../../icons/apps/microsoftoutlook.png" alt="" aria-hidden="true" /></div><div class="name">Outlook</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="ProtonMail" data-icon="lucide:lock" data-url="https://mail.proton.me">
-            <div class="icon"><i data-lucide="lock" class="icon-lucide"></i></div><div class="name">ProtonMail</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="ProtonMail" data-icon="app:protonmail" data-url="https://mail.proton.me">
+            <div class="icon"><img src="../../icons/apps/protonmail.png" alt="" aria-hidden="true" /></div><div class="name">ProtonMail</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Yahoo Mail" data-icon="lucide:inbox" data-url="https://mail.yahoo.com">
-            <div class="icon"><i data-lucide="inbox" class="icon-lucide"></i></div><div class="name">Yahoo Mail</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Yahoo Mail" data-icon="app:yahoo" data-url="https://mail.yahoo.com">
+            <div class="icon"><img src="../../icons/apps/yahoo.png" alt="" aria-hidden="true" /></div><div class="name">Yahoo Mail</div>
           </div>
         </div>
 
         <div class="catalog-section-label">Productividad</div>
         <div class="catalog-grid">
-          <div class="catalog-item" role="button" tabindex="0" data-name="Notion" data-icon="lucide:book-open" data-url="https://www.notion.so">
-            <div class="icon"><i data-lucide="book-open" class="icon-lucide"></i></div><div class="name">Notion</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Notion" data-icon="app:notion" data-url="https://www.notion.so">
+            <div class="icon"><img src="../../icons/apps/notion.png" alt="" aria-hidden="true" /></div><div class="name">Notion</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Trello" data-icon="lucide:clipboard-list" data-url="https://trello.com">
-            <div class="icon"><i data-lucide="clipboard-list" class="icon-lucide"></i></div><div class="name">Trello</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Trello" data-icon="app:trello" data-url="https://trello.com">
+            <div class="icon"><img src="../../icons/apps/trello.png" alt="" aria-hidden="true" /></div><div class="name">Trello</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Asana" data-icon="lucide:target" data-url="https://app.asana.com">
-            <div class="icon"><i data-lucide="target" class="icon-lucide"></i></div><div class="name">Asana</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Asana" data-icon="app:asana" data-url="https://app.asana.com">
+            <div class="icon"><img src="../../icons/apps/asana.png" alt="" aria-hidden="true" /></div><div class="name">Asana</div>
           </div>
           <div class="catalog-item" role="button" tabindex="0" data-name="Monday" data-icon="lucide:calendar-days" data-url="https://monday.com">
             <div class="icon"><i data-lucide="calendar-days" class="icon-lucide"></i></div><div class="name">Monday</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Todoist" data-icon="lucide:check-circle" data-url="https://app.todoist.com">
-            <div class="icon"><i data-lucide="check-circle" class="icon-lucide"></i></div><div class="name">Todoist</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Todoist" data-icon="app:todoist" data-url="https://app.todoist.com">
+            <div class="icon"><img src="../../icons/apps/todoist.png" alt="" aria-hidden="true" /></div><div class="name">Todoist</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Google Calendar" data-icon="lucide:calendar" data-url="https://calendar.google.com">
-            <div class="icon"><i data-lucide="calendar" class="icon-lucide"></i></div><div class="name">Calendar</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Google Calendar" data-icon="app:googlecalendar" data-url="https://calendar.google.com">
+            <div class="icon"><img src="../../icons/apps/googlecalendar.png" alt="" aria-hidden="true" /></div><div class="name">Calendar</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Google Drive" data-icon="lucide:folder" data-url="https://drive.google.com">
-            <div class="icon"><i data-lucide="folder" class="icon-lucide"></i></div><div class="name">Drive</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Google Drive" data-icon="app:googledrive" data-url="https://drive.google.com">
+            <div class="icon"><img src="../../icons/apps/googledrive.png" alt="" aria-hidden="true" /></div><div class="name">Drive</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Jira" data-icon="lucide:wrench" data-url="https://jira.atlassian.com">
-            <div class="icon"><i data-lucide="wrench" class="icon-lucide"></i></div><div class="name">Jira</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Jira" data-icon="app:jira" data-url="https://jira.atlassian.com">
+            <div class="icon"><img src="../../icons/apps/jira.png" alt="" aria-hidden="true" /></div><div class="name">Jira</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="GitHub" data-icon="lucide:code" data-url="https://github.com">
-            <div class="icon"><i data-lucide="code" class="icon-lucide"></i></div><div class="name">GitHub</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="GitHub" data-icon="app:github" data-url="https://github.com">
+            <div class="icon"><img src="../../icons/apps/github.png" alt="" aria-hidden="true" /></div><div class="name">GitHub</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Figma" data-icon="lucide:palette" data-url="https://www.figma.com">
-            <div class="icon"><i data-lucide="palette" class="icon-lucide"></i></div><div class="name">Figma</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Figma" data-icon="app:figma" data-url="https://www.figma.com">
+            <div class="icon"><img src="../../icons/apps/figma.png" alt="" aria-hidden="true" /></div><div class="name">Figma</div>
           </div>
         </div>
 
         <div class="catalog-section-label">Videollamadas</div>
         <div class="catalog-grid">
-          <div class="catalog-item" role="button" tabindex="0" data-name="Google Meet" data-icon="lucide:video" data-url="https://meet.google.com">
-            <div class="icon"><i data-lucide="video" class="icon-lucide"></i></div><div class="name">Meet</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Google Meet" data-icon="app:googlemeet" data-url="https://meet.google.com">
+            <div class="icon"><img src="../../icons/apps/googlemeet.png" alt="" aria-hidden="true" /></div><div class="name">Meet</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Zoom" data-icon="lucide:camera" data-url="https://zoom.us/wc">
-            <div class="icon"><i data-lucide="camera" class="icon-lucide"></i></div><div class="name">Zoom</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Zoom" data-icon="app:zoom" data-url="https://zoom.us/wc">
+            <div class="icon"><img src="../../icons/apps/zoom.png" alt="" aria-hidden="true" /></div><div class="name">Zoom</div>
           </div>
-          <div class="catalog-item" role="button" tabindex="0" data-name="Webex" data-icon="lucide:radio" data-url="https://web.webex.com">
-            <div class="icon"><i data-lucide="radio" class="icon-lucide"></i></div><div class="name">Webex</div>
+          <div class="catalog-item" role="button" tabindex="0" data-name="Webex" data-icon="app:webex" data-url="https://web.webex.com">
+            <div class="icon"><img src="../../icons/apps/webex.png" alt="" aria-hidden="true" /></div><div class="name">Webex</div>
           </div>
         </div>
 

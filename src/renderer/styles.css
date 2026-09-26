@@ -348,6 +348,8 @@ body {
   color: var(--text-main);
 }
 .catalog-item .icon { font-size: 28px; margin-bottom: 8px; display: block; }
+/* Los PNG del catálogo son de 64×64; en la rejilla se muestran a 28 */
+.catalog-item .icon img { width: 28px; height: 28px; object-fit: contain; display: inline-block; }
 .catalog-item .name { font-size: 12px; font-weight: 500; }
 
 .services-list { display: flex; flex-direction: column; gap: 8px; }
@@ -570,3 +572,10 @@ body {
 .perm-state.ok { background: #22c55e33; color: #4ade80; }
 .perm-state.no { background: #ef444433; color: #f87171; }
 .perm-state:hover { filter: brightness(1.25); }
+
+/* ── Cachés en disco por app ── */
+.cache-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-top: 1px solid var(--border-color); font-size: 12px; }
+.cache-item .nom { flex: 1; color: var(--text-main); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cache-item .mb { color: var(--text-muted); }
+.cache-item button { background: none; border: 1px solid var(--border-color); color: var(--text-muted); border-radius: 6px; padding: 2px 8px; font-size: 11px; cursor: pointer; transition: var(--transition); }
+.cache-item button:hover { border-color: var(--primary); color: var(--text-main); }

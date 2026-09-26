@@ -15,6 +15,20 @@ DevTools: there are no global shortcuts (they were removed so Yuki never capture
 
 ---
 
+## Icons
+
+App icons are flat 64×64 PNGs in `icons/apps/`, generated from [Simple Icons](https://simpleicons.org) (CC0) by `npx electron scripts/make-icons.js`. Add a slug + brand colour to `ICONS` in that script and re-run.
+
+**Never ship animated icons.** An APNG is stored *decompressed* in RAM in order to animate: the old 400×400 / 61-frame icons cost 400·400·4·61 = **37 MB of RAM each**, just to draw 40×40 px. Six apps using them meant ~223 MB resident, they were kept as base64 in localStorage (10.6 MB), and the memory panel re-injected them into the DOM every 30 s.
+
+Icons are referenced by **path**, never by bytes:
+
+| Value in `app.icon` | Renders as |
+|---|---|
+| `app:whatsapp` | `icons/apps/whatsapp.png` — one shared decoded copy |
+| `lucide:calendar` | inline SVG |
+| `data:image/png;base64,…` | user upload, resized to 64×64 on import |
+
 ## Adding apps to the built-in catalog
 
 The catalog is plain HTML in `src/renderer/index.html` (sections "Mensajería", "Email", "Productividad", "Videollamadas"). Add a `.catalog-item` to the right `.catalog-grid`:
