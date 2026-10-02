@@ -146,3 +146,38 @@ Sobre la capacidad restringida runFullTrust: Yuki es una aplicación de escritor
 | Sitio web | https://foxen2005.github.io/yuki/ |
 | Soporte | https://github.com/foxen2005/yuki/issues |
 | Clasificación por edad | Cuestionario IARC — marcar **acceso irrestricto a internet** |
+
+## Características del producto (lista con viñetas de la ficha)
+
+Se agregan una por una con «Agregar más». Aparecen como lista en la página de la tienda.
+
+```
+Todas tus apps web en una sola ventana
+Sesiones separadas: varias cuentas del mismo servicio a la vez
+Monitor de memoria RAM por aplicación
+Suspensión automática de las apps que no estás usando
+Ver cuánto ocupa cada app en disco y liberarlo con un botón
+Bloqueo de la ventana con PIN cifrado
+Notificaciones nativas de Windows con sonido configurable
+Corrector ortográfico en español e inglés
+Permisos de cámara y micrófono por sitio
+Copia de seguridad de la configuración en un archivo
+Sin telemetría: no se recopila ningún dato
+Código abierto con licencia MIT
+```
+
+## Campos complementarios
+
+| Campo | Valor |
+|---|---|
+| Título corto | `Yuki` |
+| Descripción corta | la «Descripción corta» de más arriba |
+| Desarrollado por | `Digital Fox` |
+
+## Información de copyright y marca registrada
+
+```
+© 2025-2026 Digital Fox. Publicado bajo licencia MIT.
+
+Yuki es un cliente no oficial e independiente. WhatsApp, Gmail, Telegram, Slack, Notion y los demás servicios mencionados son marcas de sus respectivos dueños; no existe afiliación, asociación ni respaldo por parte de ellos. Sus logotipos se usan únicamente para identificar el acceso correspondiente dentro de la aplicación.
+```
