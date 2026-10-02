@@ -33,10 +33,27 @@ const CSS_DIFUMINAR = `
   table[role="grid"], .ae4, .Cp, [role="list"]
   { filter: blur(9px) !important; }
 
-  /* Fotos de perfil y avatares: en WhatsApp Web se sirven como blob:, así que
-     esto los alcanza estén donde estén (incluida la foto propia del rail
-     lateral, que no cae dentro de los contenedores de arriba). */
-  img[src^="blob:"] { filter: blur(10px) !important; }
+  /* Gmail tiene otra estructura: la bandeja es una tabla de filas .zA y el
+     correo abierto vive en .adn/.a3s. Se difumina la lista y el cuerpo, pero
+     no la barra lateral de etiquetas ni la de herramientas, para que siga
+     reconociéndose que es Gmail. */
+  /* Difuminado suave: con 9px la bandeja quedaba como una mancha blanca y no
+     se entendía que eran correos. Con 5px no se lee nada pero se ve la forma
+     de las filas, que es lo que comunica la captura. */
+  tr.zA, .ae4 table, .Cp table, .adn, .a3s, .aDP, [gh="tl"] table
+  { filter: blur(5px) !important; }
+
+  /* El árbol de etiquetas del lateral incluye las etiquetas propias del
+     usuario (nombres de bancos, clientes, servicios): son datos personales
+     aunque no sean el contenido de los correos. */
+  .TK, .aim, .byl { filter: blur(6px) !important; }
+
+  /* Fotos de perfil y avatares. En WhatsApp Web se sirven como blob: y en
+     Gmail desde googleusercontent; esto los alcanza estén donde estén,
+     incluida la foto propia, que no cae en los contenedores de arriba. */
+  img[src^="blob:"], img[src*="googleusercontent"],
+  [aria-label*="Cuenta de Google"], [aria-label*="Google Account"]
+  { filter: blur(10px) !important; }
 `
 
 function leerApps() {
