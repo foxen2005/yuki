@@ -1,6 +1,6 @@
 {
   "name": "yuki",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Multi-app desktop client",
   "main": "src/main/index.js",
   "scripts": {
@@ -10,7 +10,8 @@
     "build:dir": "electron-builder build --win --dir",
     "release": "electron-builder build --win --publish always",
     "build:store": "electron-builder build --win appx",
-    "assets:appx": "electron scripts/make-appx-assets.js"
+    "assets:appx": "electron scripts/make-appx-assets.js",
+    "assets:ico": "node scripts/make-ico.js"
   },
   "build": {
     "appId": "com.yuki.app",

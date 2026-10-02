@@ -181,3 +181,19 @@ Código abierto con licencia MIT
 
 Yuki es un cliente no oficial e independiente. WhatsApp, Gmail, Telegram, Slack, Notion y los demás servicios mencionados son marcas de sus respectivos dueños; no existe afiliación, asociación ni respaldo por parte de ellos. Sus logotipos se usan únicamente para identificar el acceso correspondiente dentro de la aplicación.
 ```
+
+## Arte promocional de la ficha
+
+Generado por `npx electron scripts/make-store-art.js` desde el PNG matriz de la
+raíz (1254×1254), sobre el fondo de marca. Queda en `store-shots/arte/`.
+
+| Archivo | Dónde va |
+|---|---|
+| `poster-9x16-1440x2160.png` | Arte de póster 9:16 — **logotipo principal en Windows 10/11** |
+| `caja-1x1-2160x2160.png` | Arte de caja 1:1 |
+| `superheroe-16x9-1920x1080.png` | Imagen de superhéroe 16:9 (cabecera de la ficha) |
+
+Sin texto a propósito: la tienda dibuja el nombre del producto encima, y la
+imagen 16:9 prohíbe explícitamente incluir el título.
+
+Los logos del listado (300×300, 150×150, 71×71) están en `store-shots/logos/`.
