@@ -8,7 +8,9 @@
     "start:dev": "set ELECTRON_RUN_AS_NODE=&&electron . --inspect=9229",
     "build": "electron-builder build --win",
     "build:dir": "electron-builder build --win --dir",
-    "release": "electron-builder build --win --publish always"
+    "release": "electron-builder build --win --publish always",
+    "build:store": "electron-builder build --win appx",
+    "assets:appx": "electron scripts/make-appx-assets.js"
   },
   "build": {
     "appId": "com.yuki.app",
@@ -56,6 +58,21 @@
     ],
     "portable": {
       "artifactName": "Yuki-Portable.${ext}"
+    },
+    "appx": {
+      "applicationId": "Yuki",
+      "identityName": "PENDIENTE-PARTNER-CENTER",
+      "publisher": "CN=PENDIENTE-PARTNER-CENTER",
+      "publisherDisplayName": "Digital Fox",
+      "displayName": "Yuki",
+      "backgroundColor": "#7c3aed",
+      "languages": [
+        "es-CL",
+        "es",
+        "en-US"
+      ],
+      "showNameOnTiles": false,
+      "electronUpdaterAware": false
     }
   },
   "devDependencies": {

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacidad — Yuki</title>
+<meta name="description" content="Política de privacidad de Yuki: sin telemetría, sin cuentas y sin servidores propios. Todos tus datos quedan en tu equipo.">
+<link rel="icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: oklch(0.13 0.03 295); --bg-2: oklch(0.17 0.035 295);
+    --surface: oklch(0.21 0.04 295); --line: oklch(0.42 0.12 295 / 0.45);
+    --ink: oklch(0.97 0.01 295); --ink-2: oklch(0.84 0.02 295); --ink-3: oklch(0.72 0.03 295);
+    --violet: oklch(0.55 0.25 295); --violet-3: oklch(0.80 0.12 295);
+    --font-display: 'Unbounded', system-ui, sans-serif;
+    --font-body: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --gutter: clamp(20px, 6vw, 56px);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink-2); font-family: var(--font-body); font-size: 17px; line-height: 1.7; -webkit-font-smoothing: antialiased; }
+  a { color: var(--violet-3); }
+  .wrap { max-width: 760px; margin: 0 auto; padding: clamp(40px, 8vw, 88px) var(--gutter) 80px; }
+  .volver { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink-3); text-decoration: none; margin-bottom: 32px; }
+  .volver:hover { color: var(--ink); }
+  h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(2rem, 5vw, 3rem); color: var(--ink); letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 10px; text-wrap: balance; }
+  .fecha { font-size: 14px; color: var(--ink-3); margin-bottom: 36px; }
+  .destacado { background: var(--bg-2); border: 1px solid var(--line); border-radius: 18px; padding: 24px 26px; margin-bottom: 40px; }
+  .destacado p { color: var(--ink); font-size: 1.05rem; }
+  h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.3rem; color: var(--ink); margin: 36px 0 12px; letter-spacing: -0.02em; }
+  p { margin-bottom: 14px; text-wrap: pretty; }
+  ul { margin: 0 0 14px 20px; }
+  li { margin-bottom: 8px; }
+  code { font-family: ui-monospace, Consolas, monospace; font-size: 0.88em; background: var(--surface); padding: 2px 6px; border-radius: 5px; color: var(--ink-2); }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 18px; font-size: 15px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--ink); font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.4px; }
+  footer { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 24px; font-size: 14px; color: var(--ink-3); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="volver" href="./">← Volver a Yuki</a>
+
+  <h1>Política de privacidad</h1>
+  <p class="fecha">Última actualización: 1 de octubre de 2026</p>
+
+  <div class="destacado">
+    <p><strong>Yuki no recopila absolutamente nada.</strong> No hay cuentas, no hay telemetría, no hay analítica y no existe ningún servidor de Yuki al que se envíen tus datos. Todo lo que generas queda en tu computador.</p>
+  </div>
+
+  <h2>Qué es Yuki</h2>
+  <p>Yuki es una aplicación de escritorio para Windows que muestra sitios web que tú eliges (WhatsApp Web, Gmail, Telegram y cualquier otra dirección que agregues) dentro de una sola ventana. Funciona como un navegador dedicado: Yuki no se interpone entre tú y esos servicios, no lee su contenido ni lo envía a ninguna parte.</p>
+
+  <h2>Qué datos se guardan y dónde</h2>
+  <p>Todos los datos se guardan únicamente en tu equipo, en la carpeta de perfil de la aplicación. Puedes verla desde <em>Configuración → Sesiones de apps → Ver carpeta</em>.</p>
+  <table>
+    <tr><th>Dato</th><th>Para qué</th><th>Dónde</th></tr>
+    <tr><td>Sesiones de las apps (cookies, almacenamiento local, caché)</td><td>Que no tengas que iniciar sesión cada vez</td><td>Tu equipo, una carpeta separada por app</td></tr>
+    <tr><td>Tu lista de apps, íconos y ajustes</td><td>Recordar tu configuración</td><td>Tu equipo</td></tr>
+    <tr><td>PIN de bloqueo, si lo activas</td><td>Bloquear la ventana al minimizar</td><td>Tu equipo, cifrado con el sistema de credenciales de Windows</td></tr>
+    <tr><td>Permisos por sitio (cámara, micrófono, ubicación)</td><td>No volver a preguntarte lo mismo</td><td>Tu equipo</td></tr>
+  </table>
+  <p>Nada de esto sale de tu computador. Yuki no puede leerlo de forma remota y sus autores no tienen acceso a ello.</p>
+
+  <h2>Conexiones que hace Yuki</h2>
+  <p>La aplicación en sí solo se conecta a internet por dos motivos:</p>
+  <ul>
+    <li><strong>Buscar actualizaciones</strong> en GitHub, consultando el archivo de la última versión publicada. No se envía ningún dato tuyo en esa consulta. En la versión instalada desde Microsoft Store esto no ocurre: actualiza la propia tienda.</li>
+    <li><strong>Diccionarios del corrector ortográfico</strong>, que Chromium descarga una vez desde los servidores de Google.</li>
+  </ul>
+  <p>Todo el resto del tráfico lo generan los sitios que tú abres, directamente contra sus propios servidores, igual que si usaras un navegador.</p>
+
+  <h2>Servicios de terceros</h2>
+  <p>Cuando usas WhatsApp, Gmail o cualquier otro sitio dentro de Yuki, estás usando ese servicio y aplican sus propias políticas de privacidad y términos de uso. Yuki no está afiliado, asociado ni respaldado por ninguno de ellos; sus nombres y logotipos pertenecen a sus respectivos dueños y se usan solo para identificar el sitio al que corresponde cada acceso.</p>
+
+  <h2>Permisos</h2>
+  <p>Cámara, micrófono, ubicación y compartir pantalla se te preguntan una sola vez por sitio y la decisión queda guardada en tu equipo. Puedes revisarla o borrarla cuando quieras en <em>Configuración → Permisos de sitios</em>. MIDI, HID, puerto serie y USB se rechazan siempre.</p>
+
+  <h2>Menores de edad</h2>
+  <p>Yuki no está dirigido a menores de 13 años y no recopila información de ninguna persona, de cualquier edad.</p>
+
+  <h2>Borrar tus datos</h2>
+  <p>Desinstalar Yuki y borrar la carpeta de perfil elimina todo rastro. También puedes borrar la sesión de una app concreta desde <em>Configuración</em>, sin tocar las demás.</p>
+
+  <h2>Cambios</h2>
+  <p>Si esta política cambia, se publicará en esta misma página con una nueva fecha. El historial completo de cambios es público en el repositorio del proyecto.</p>
+
+  <h2>Contacto</h2>
+  <p>Dudas, reportes o solicitudes: <a href="https://github.com/foxen2005/yuki/issues">abre un issue en GitHub</a>. El código fuente completo está disponible bajo licencia MIT, así que todo lo descrito aquí es verificable.</p>
+
+  <footer>Yuki · Digital Fox · <a href="https://github.com/foxen2005/yuki">github.com/foxen2005/yuki</a></footer>
+</div>
+</body>
+</html>

@@ -522,6 +522,7 @@ async function checkUpdateUI() {
   if (r.estado === 'al-dia') { el.className = 'ok'; el.textContent = 'Estás al día' }
   else if (r.estado === 'lista') { el.className = 'nuevo'; el.textContent = `Yuki ${r.version} lista — reinicia para instalarla` }
   else if (r.estado === 'descargando') { el.className = 'nuevo'; el.textContent = `Descargando Yuki ${r.version}…` }
+  else if (r.estado === 'store') { el.className = 'ok'; el.textContent = 'Se actualiza desde Microsoft Store' }
   else if (r.estado === 'dev') { el.textContent = 'Versión de desarrollo o portable: sin auto-update' }
   else { el.textContent = 'No se pudo comprobar (¿sin conexión?)' }
 }

@@ -10,3 +10,4 @@ yuki-backup-*.json
 Thumbs.db
 *.enc
 legacy/
+dist-store/
