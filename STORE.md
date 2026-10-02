@@ -312,3 +312,42 @@ Privacy policy: https://foxen2005.github.io/yuki/privacidad.html
 **Nota:** las «Notas para la certificación» no se escriben en esta misma página
 — el enlace lleva a **Información adicional sobre pruebas**, en el menú de la
 izquierda. Ahí va el texto de la sección «Notas para la certificación».
+
+---
+
+## Información adicional sobre pruebas (Additional Testing Info → Descripción)
+
+Esta pantalla pide instrucciones de prueba, no solo contexto. Importa porque el
+revisor abre Yuki **sin apps configuradas** y podría concluir que no hace nada.
+Va en inglés. **Credenciales: ninguna** — la app no tiene cuentas.
+
+```
+NO CREDENTIALS ARE NEEDED. Yuki Workspace has no accounts and no sign-in of its own. Nothing is required to evaluate it.
+
+HOW TO TEST
+
+On first launch the sidebar is empty by design, because the user chooses which web applications to add.
+
+1. Click the gear icon at the bottom of the left sidebar to open Settings.
+2. Scroll to "Catálogo" / catalog and click any entry (for example Google Calendar or GitHub). It is added to the sidebar and loads immediately in its own isolated session. No account is needed to verify that it loads.
+3. Add the same entry a second time: it appears as a separate instance with its own independent session. This is the core feature — two accounts of the same service running side by side.
+4. Under "App personalizada" you can add any URL with a name, to verify arbitrary sites load.
+5. In Settings you can also verify: per-app RAM usage and auto-sleep, per-app disk cache size with a button to free it, the PIN lock (Seguridad), per-site permissions, and configuration export/import.
+
+WHAT THIS APP IS
+
+Yuki Workspace is a desktop container that displays web applications the user chooses, each in a fully isolated Chromium session.
+
+It is not a wrapper around a single website. It provides functionality a browser does not: per-application session isolation (several accounts of the same service in parallel), per-application RAM monitoring and automatic sleep, per-application disk cache measurement and clearing, a window lock with a PIN encrypted through the Windows credential system, per-site permission management, native Windows notifications and a spell checker.
+
+THIRD-PARTY TRADEMARKS
+
+Yuki Workspace is an unofficial, independent client with no affiliation to, association with, or endorsement by WhatsApp, Google, Telegram, Slack, Notion or any other service. The logos shown in the catalog are used solely to identify which website each shortcut points to, which is also stated in the store listing and in the application itself. No third-party trademark appears in the product name.
+
+PRIVACY AND SOURCE
+
+The application collects no data, has no telemetry and no backend of its own. Its only outbound connection is to GitHub to check for updates, which is disabled in the Store build because the Store handles updates.
+
+Source code (MIT): https://github.com/foxen2005/yuki
+Privacy policy: https://foxen2005.github.io/yuki/privacidad.html
+```
