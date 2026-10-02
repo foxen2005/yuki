@@ -351,3 +351,51 @@ The application collects no data, has no telemetry and no backend of its own. It
 Source code (MIT): https://github.com/foxen2005/yuki
 Privacy policy: https://foxen2005.github.io/yuki/privacidad.html
 ```
+
+---
+
+# Cuando la app esté aprobada
+
+Los cambios de lanzamiento (badge de la tienda en la web y el README) están
+listos en la rama **`store-launch`**, sin tocar nada en producción. El día que
+la ficha esté publicada:
+
+```bash
+git checkout master
+git merge store-launch
+git push origin master
+git branch -d store-launch
+```
+
+GitHub Pages se reconstruye solo. Conviene comprobar que
+https://apps.microsoft.com/detail/9NG9R9QH1RT1 ya responde antes de hacer el
+merge: si la ficha todavía no está publicada, el enlace daría 404.
+
+Qué cambia ese merge:
+
+- La tienda pasa a ser la vía principal de descarga en la web y en el README; el
+  `.exe` queda como alternativa.
+- Se dice explícitamente que la versión de la tienda va firmada por Microsoft y
+  no dispara SmartScreen, que es la ventaja real para quien instala.
+- El aviso de «ejecutable sin firmar» queda acotado solo a los `.exe` de GitHub.
+
+## Automatizar los envíos (pendiente)
+
+Para que publicar en la tienda sea parte de `npm run release` hace falta la API
+de envíos de Partner Center. Requisitos, en este orden:
+
+1. En Azure Portal, registrar una aplicación (Microsoft Entra ID → Registros de
+   aplicaciones). Anotar **Tenant ID** y **Client ID**, y crear un **Client
+   secret**.
+2. En Partner Center: Configuración de la cuenta → **Usuarios** → Aplicaciones de
+   Azure AD → asociar esa aplicación con rol **Administrador** o
+   **Desarrollador**.
+3. Con esos tres datos se puede automatizar: crear el envío, subir el paquete,
+   actualizar las notas de versión y enviar a certificación.
+
+No está implementado a propósito: un script que modifica envíos en vivo no se
+escribe a ciegas. Cuando existan las credenciales se desarrolla y se prueba
+contra un envío real, paso a paso.
+
+**Lo que la API no hace:** reservar nombres, el cuestionario IARC ni la primera
+configuración del producto. Eso sigue siendo manual, pero solo se hace una vez.

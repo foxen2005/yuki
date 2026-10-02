@@ -8,7 +8,8 @@
 
 Cliente de escritorio para Windows que reúne WhatsApp, Gmail, Telegram, Notion, Slack y cualquier URL en un solo lugar, con sesiones persistentes, control de RAM y bloqueo con PIN.
 
-[![Descargar instalador](https://img.shields.io/badge/Descargar-Yuki%20Setup-7c3aed?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/foxen2005/yuki/releases/latest/download/Yuki-Setup.exe)
+[![Descargar de Microsoft Store](https://img.shields.io/badge/Microsoft%20Store-Descargar-0078d4?style=for-the-badge&logo=microsoftstore&logoColor=white)](https://apps.microsoft.com/detail/9NG9R9QH1RT1)
+[![Descargar instalador](https://img.shields.io/badge/Descargar-.exe-7c3aed?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/foxen2005/yuki/releases/latest/download/Yuki-Setup.exe)
 [![Portable](https://img.shields.io/badge/Portable-Yuki--Portable.exe-2d264b?style=for-the-badge)](https://github.com/foxen2005/yuki/releases/latest/download/Yuki-Portable.exe)
 
 [![Sitio](https://img.shields.io/badge/sitio-foxen2005.github.io%2Fyuki-0ea5e9?style=flat-square)](https://foxen2005.github.io/yuki/)
@@ -22,12 +23,15 @@ Cliente de escritorio para Windows que reúne WhatsApp, Gmail, Telegram, Notion,
 
 ## Instalación
 
-| | Archivo | Para qué |
+| | Dónde | Para qué |
 |---|---|---|
-| **Instalador** (recomendado) | [`Yuki-Setup.exe`](https://github.com/foxen2005/yuki/releases/latest/download/Yuki-Setup.exe) (85 MB) | Uso normal. Crea acceso directo, permite elegir carpeta, se desinstala desde Windows. **Se actualiza solo.** |
+| **Microsoft Store** (recomendado) | [Yuki Workspace](https://apps.microsoft.com/detail/9NG9R9QH1RT1) | Firmado por Microsoft: se instala sin el aviso de SmartScreen y se actualiza junto al resto de tus apps. |
+| **Instalador** | [`Yuki-Setup.exe`](https://github.com/foxen2005/yuki/releases/latest/download/Yuki-Setup.exe) (85 MB) | Crea acceso directo, permite elegir carpeta, se desinstala desde Windows. **Se actualiza solo.** |
 | **Portable** | [`Yuki-Portable.exe`](https://github.com/foxen2005/yuki/releases/latest/download/Yuki-Portable.exe) (85 MB) | Sin instalación. Los datos quedan en `%APPDATA%\Yuki`. No se auto-actualiza. |
 
-Requiere Windows 10/11 x64. El ejecutable aún no está firmado, así que SmartScreen puede pedir confirmación la primera vez ("Más información → Ejecutar de todas formas"). Todas las versiones en [Releases](https://github.com/foxen2005/yuki/releases).
+Requiere Windows 10/11 x64.
+
+La versión de Microsoft Store va firmada por Microsoft y se instala sin advertencias. Los `.exe` descargados desde aquí **no están firmados**, así que SmartScreen puede pedir confirmación la primera vez ("Más información → Ejecutar de todas formas"); el hash SHA-512 de cada archivo se publica en el `latest.yml` de cada [release](https://github.com/foxen2005/yuki/releases).
 
 ## Qué hace
 
