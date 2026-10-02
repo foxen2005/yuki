@@ -148,4 +148,5 @@ These are sent from `webview-preload.js` via `ipcRenderer.send()` and received i
 - [ ] Test backup export/import round-trip
 - [ ] Test sleep/wake on 3+ apps
 - [ ] `GH_TOKEN=$(gh auth token) npm run release` — builds and publishes the GitHub release with `Yuki-Setup.exe`, `Yuki-Portable.exe` and `latest.yml` (the file installed copies poll for auto-update). Then `git tag vX.Y.Z && git push --tags`.
+- [ ] **Publish to Microsoft Store too — every release goes to both channels.** `npm run build:store` produces `dist/Yuki X.Y.Z.appx`; upload it in Partner Center (Submissions → Packages), update "What's new in this version" on both the Spanish and English listings, and submit for certification. Full walkthrough and all listing copy live in [STORE.md](STORE.md).
 - [ ] Download links use `releases/latest/download/…` so they never need updating; only bump the version shown in `docs/index.html`
