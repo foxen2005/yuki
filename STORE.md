@@ -284,3 +284,31 @@ Several accounts of the same service running at once
 A catalog of apps ready to add, or any URL
 Per-app RAM and disk monitor
 ```
+
+---
+
+## Justificación de runFullTrust (campo obligatorio en Opciones de envío)
+
+Partner Center exige explicar por qué el paquete declara esta capacidad
+restringida. Va en inglés: la certificación la revisan equipos globales.
+
+```
+Yuki Workspace is a Win32 desktop application built with Electron and packaged as MSIX through the Desktop Bridge (EntryPoint="Windows.FullTrustApplication"). The runFullTrust capability is inherent to that packaging model — a packaged Win32 application cannot run without it — and it is the only restricted capability the package declares.
+
+It is used strictly for standard desktop functionality:
+
+- Running the isolated renderer processes that host each web application in its own separate session.
+- The system tray icon and its context menu.
+- Native Windows toast notifications forwarded from the hosted web applications.
+- Encrypting the optional lock PIN using the Windows credential system (Electron safeStorage, backed by DPAPI).
+- Reading and writing the application's own configuration and per-app session data inside its user data folder.
+
+The application does not access hardware devices (MIDI, HID, serial and USB permission requests are always denied), does not install services or drivers, does not modify the system or other applications, does not require administrator elevation, and collects no user data.
+
+The full source code is open under the MIT license and can be audited: https://github.com/foxen2005/yuki
+Privacy policy: https://foxen2005.github.io/yuki/privacidad.html
+```
+
+**Nota:** las «Notas para la certificación» no se escriben en esta misma página
+— el enlace lleva a **Información adicional sobre pruebas**, en el menú de la
+izquierda. Ahí va el texto de la sección «Notas para la certificación».
