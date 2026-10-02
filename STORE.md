@@ -11,7 +11,20 @@ Guía del proceso de empaquetado y envío. El paquete se genera con el destino `
 | Auto-update desactivado en la tienda | ✅ `process.windowsStore` (actualiza la tienda, no electron-updater) |
 | Política de privacidad publicada | ✅ https://foxen2005.github.io/yuki/privacidad.html |
 | Paquete de prueba compilado | ✅ 123 MB, sin firmar, `runFullTrust` |
-| Identidad de Partner Center | ⏳ **pendiente** |
+| Identidad de Partner Center | ✅ aplicada y validada contra el manifiesto |
+
+## Identidad (ya aplicada, 1-oct-2026)
+
+| Campo | Valor |
+|---|---|
+| Package/Identity/Name | `DigitalFox.YukiWorkspace` |
+| Package/Identity/Publisher | `CN=9217F805-35E5-4B41-AF4D-F39BE6433208` |
+| PublisherDisplayName | `DigitalFox` |
+| Package Family Name | `DigitalFox.YukiWorkspace_8zn5xjx807dh2` |
+| Store ID | `9NG9R9QH1RT1` |
+| Ficha pública | https://apps.microsoft.com/detail/9NG9R9QH1RT1 |
+
+Son valores públicos: aparecen en el manifiesto de cualquier paquete publicado.
 
 ## 1. En Partner Center (esto solo lo puede hacer la cuenta registrada)
 

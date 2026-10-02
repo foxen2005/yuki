@@ -61,9 +61,9 @@
     },
     "appx": {
       "applicationId": "Yuki",
-      "identityName": "PENDIENTE-PARTNER-CENTER",
-      "publisher": "CN=PENDIENTE-PARTNER-CENTER",
-      "publisherDisplayName": "Digital Fox",
+      "identityName": "DigitalFox.YukiWorkspace",
+      "publisher": "CN=9217F805-35E5-4B41-AF4D-F39BE6433208",
+      "publisherDisplayName": "DigitalFox",
       "displayName": "Yuki Workspace",
       "backgroundColor": "#7c3aed",
       "languages": [
