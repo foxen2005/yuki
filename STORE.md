@@ -66,9 +66,9 @@ GitHub Releases sigue funcionando igual para quien descargue de la web: el insta
 
 ## Nombre del producto
 ```
-Yuki
+Yuki Workspace
 ```
-Alternativas si está tomado: `Yuki Desktop`, `Yuki — Multi App Client`, `Yuki by Digital Fox`
+Reservado el 1-oct-2026 («Yuki» a secas ya estaba tomado). Debe coincidir exacto con `build.appx.displayName` en package.json.
 
 ## Descripción corta (máx. 200 caracteres)
 ```
