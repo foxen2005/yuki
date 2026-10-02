@@ -10,6 +10,11 @@ const fs = require('fs')
 
 const SRC = path.join(__dirname, '..', 'icons', 'icon.png')
 const OUT = path.join(__dirname, '..', 'build', 'appx')
+// Logos que se suben a mano en la ficha de la tienda (sección «Imágenes para
+// mostrar en Store»). No van dentro del paquete: sirven para que el listado se
+// vea nítido en vez de reescalar los del .appx.
+const OUT_FICHA = path.join(__dirname, '..', 'store-shots', 'logos')
+const LOGOS_FICHA = { 'ficha-300x300.png': 300, 'ficha-150x150.png': 150, 'ficha-71x71.png': 71 }
 
 // nombre → [ancho, alto, proporción del lado menor que ocupa el logo]
 const ASSETS = {
@@ -57,5 +62,31 @@ app.whenReady().then(async () => {
   }
 
   console.log('\nGenerados en build/appx:\n  ' + hechos.join('\n  '))
+
+  // Logos de la ficha: mismo icono, sin márgenes, en los tamaños exactos que
+  // pide «Imágenes para mostrar en Store». Se suben a mano en Partner Center.
+  fs.mkdirSync(OUT_FICHA, { recursive: true })
+  const deFicha = []
+  for (const [nombre, lado] of Object.entries(LOGOS_FICHA)) {
+    const b64 = await win.webContents.executeJavaScript(`new Promise(res => {
+      const img = new Image()
+      img.onload = () => {
+        const c = document.createElement('canvas')
+        c.width = c.height = ${lado}
+        const ctx = c.getContext('2d')
+        ctx.imageSmoothingQuality = 'high'
+        ctx.drawImage(img, 0, 0, ${lado}, ${lado})
+        res(c.toDataURL('image/png').split(',')[1])
+      }
+      img.onerror = () => res(null)
+      img.src = 'data:image/png;base64,${b64src}'
+    })`)
+    if (!b64) continue
+    const buf = Buffer.from(b64, 'base64')
+    fs.writeFileSync(path.join(OUT_FICHA, nombre), buf)
+    deFicha.push(`${nombre} (${(buf.length / 1024).toFixed(1)} KB)`)
+  }
+  console.log('\nLogos de la ficha en store-shots/logos:\n  ' + deFicha.join('\n  '))
+
   app.quit()
 })
