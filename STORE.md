@@ -131,6 +131,8 @@ Los logotipos de servicios de terceros que aparecen en el catálogo se usan excl
 La aplicación no recopila ningún dato, no tiene servidores propios y su código es abierto bajo licencia MIT: https://github.com/foxen2005/yuki
 
 Política de privacidad: https://foxen2005.github.io/yuki/privacidad.html
+
+Sobre la capacidad restringida runFullTrust: Yuki es una aplicación de escritorio Win32 empaquetada como MSIX (EntryPoint Windows.FullTrustApplication), construida con Electron. La capacidad runFullTrust es obligatoria para ese tipo de empaquetado y es la única capacidad restringida que declara el paquete. La aplicación la necesita para funciones propias de escritorio: ejecutar los procesos de renderizado aislados de cada aplicación web, el icono y menú en la bandeja del sistema, las notificaciones nativas de Windows y el cifrado del PIN mediante la API safeStorage del sistema. No se declara ninguna otra capacidad restringida y la aplicación no accede a dispositivos, no instala servicios ni modifica el sistema.
 ```
 
 ## Datos del envío
