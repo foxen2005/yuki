@@ -59,3 +59,75 @@ Hay que entrar sabiendo esto, no son trámites garantizados:
 ## Mantener las dos vías
 
 GitHub Releases sigue funcionando igual para quien descargue de la web: el instalador NSIS conserva su auto-update y el portable sigue existiendo. La versión de la tienda simplemente no usa electron-updater. Al publicar una versión nueva hay que subir el `.appx` a Partner Center además del `npm run release` de siempre.
+
+---
+
+# Textos de la ficha (listos para copiar)
+
+## Nombre del producto
+```
+Yuki
+```
+Alternativas si está tomado: `Yuki Desktop`, `Yuki — Multi App Client`, `Yuki by Digital Fox`
+
+## Descripción corta (máx. 200 caracteres)
+```
+Reúne WhatsApp, Gmail, Telegram, Notion y cualquier sitio web en una sola ventana, con sesiones separadas que no se pierden al reiniciar.
+```
+
+## Descripción larga
+```
+Yuki reúne las aplicaciones web que usas todo el día en una sola ventana de escritorio: WhatsApp, Gmail, Telegram, Slack, Notion, Google Calendar o cualquier dirección que quieras agregar.
+
+Cada aplicación corre aislada, con su propia sesión guardada. Puedes tener dos cuentas de Gmail abiertas al mismo tiempo sin que una interfiera con la otra, y al cerrar Yuki no pierdes ninguna sesión.
+
+QUÉ LO HACE DISTINTO DE UN NAVEGADOR
+
+• Sesiones separadas de verdad: cada app tiene su propio almacenamiento aislado. Varias cuentas del mismo servicio conviven sin conflictos.
+• Memoria bajo control: monitor de RAM por aplicación y suspensión automática configurable. Las apps que no usas se duermen y despiertan donde las dejaste.
+• Espacio en disco bajo control: puedes ver cuánto ocupa cada aplicación y liberarlo con un botón, sin cerrar sesión en ninguna.
+• Bloqueo con PIN: al minimizar, pide un PIN para volver. Se guarda cifrado con el sistema de credenciales de Windows.
+• Notificaciones nativas de Windows, con sonido configurable y modo No molestar.
+• Corrector ortográfico en español e inglés, con sugerencias al hacer clic derecho.
+• Permisos por sitio: cámara, micrófono y ubicación se preguntan una vez y puedes revisarlos o revocarlos cuando quieras.
+• Atajos de teclado que no molestan: Ctrl+1 a Ctrl+9 cambian de aplicación solo cuando Yuki está en primer plano, nunca capturan teclas de otros programas.
+• Copia de seguridad de tu configuración en un archivo, para cambiar de equipo en un minuto.
+
+PRIVACIDAD
+
+Yuki no tiene cuentas, no recopila datos y no existe ningún servidor al que se envíe información. Todo queda en tu equipo. El código fuente es abierto, con licencia MIT, y cualquiera puede verificarlo.
+
+AVISO
+
+Yuki es un cliente no oficial e independiente. No está afiliado, asociado ni respaldado por WhatsApp, Google, Telegram, Slack, Notion ni ningún otro servicio. Los nombres y logotipos de esos servicios pertenecen a sus respectivos dueños y se usan únicamente para identificar el acceso correspondiente dentro de la aplicación.
+```
+
+## Palabras clave (hasta 7)
+```
+multi app, mensajería, productividad, escritorio, pestañas, cliente web, organizador
+```
+
+## Notas para la certificación
+```
+Yuki es un cliente de escritorio no oficial que muestra, en una sola ventana, sitios web elegidos por la persona usuaria.
+
+No es un simple envoltorio de un sitio web: aporta funcionalidad propia que el navegador no da — aislamiento de sesiones por aplicación (varias cuentas del mismo servicio en paralelo), monitor y liberación de memoria RAM por aplicación, control y limpieza del espacio en disco por aplicación, bloqueo de la ventana con PIN cifrado mediante safeStorage de Windows, gestión de permisos por sitio, notificaciones nativas y corrector ortográfico.
+
+Los logotipos de servicios de terceros que aparecen en el catálogo se usan exclusivamente para identificar a qué sitio corresponde cada acceso. La ficha y la propia aplicación indican que se trata de un cliente no oficial, sin afiliación con esos servicios.
+
+La aplicación no recopila ningún dato, no tiene servidores propios y su código es abierto bajo licencia MIT: https://github.com/foxen2005/yuki
+
+Política de privacidad: https://foxen2005.github.io/yuki/privacidad.html
+```
+
+## Datos del envío
+
+| Campo | Valor |
+|---|---|
+| Precio | Gratis |
+| Categoría | Productividad |
+| Mercados | Todos |
+| Política de privacidad | https://foxen2005.github.io/yuki/privacidad.html |
+| Sitio web | https://foxen2005.github.io/yuki/ |
+| Soporte | https://github.com/foxen2005/yuki/issues |
+| Clasificación por edad | Cuestionario IARC — marcar **acceso irrestricto a internet** |
