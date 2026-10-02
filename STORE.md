@@ -197,3 +197,90 @@ Sin texto a propósito: la tienda dibuja el nombre del producto encima, y la
 imagen 16:9 prohíbe explícitamente incluir el título.
 
 Los logos del listado (300×300, 150×150, 71×71) están en `store-shots/logos/`.
+
+---
+
+# Store listing — English (United States)
+
+The package declares `es` and `en-US`, so Partner Center requires a listing for
+each. Spanish (Chile) was dropped from `build.appx.languages`: it is redundant
+with Spanish and only forced a duplicate listing.
+
+## Product name
+```
+Yuki Workspace
+```
+
+## Short description
+```
+Bring WhatsApp, Gmail, Telegram, Notion and any website together in one window, with separate sessions that survive a restart.
+```
+
+## Description
+```
+Yuki brings the web apps you use all day into a single desktop window: WhatsApp, Gmail, Telegram, Slack, Notion, Google Calendar, or any address you want to add.
+
+Every app runs isolated, with its own saved session. You can keep two Gmail accounts open at the same time without one interfering with the other, and closing Yuki never signs you out.
+
+WHAT MAKES IT DIFFERENT FROM A BROWSER
+
+• Genuinely separate sessions: each app gets its own isolated storage. Several accounts of the same service coexist without conflicts.
+• Memory under control: per-app RAM monitor and configurable auto-sleep. Apps you are not using go to sleep and wake up right where you left them.
+• Disk space under control: see how much each app takes and free it with one button, without signing out of anything.
+• PIN lock: asks for a PIN when you restore the window. Stored encrypted with the Windows credential system.
+• Native Windows notifications, with a configurable sound and a Do Not Disturb mode.
+• Spell checker in Spanish and English, with suggestions on right click.
+• Per-site permissions: camera, microphone and location are asked once, and you can review or revoke them whenever you want.
+• Keyboard shortcuts that stay out of the way: Ctrl+1 to Ctrl+9 switch apps only while Yuki is in the foreground, never capturing keys from other programs.
+• Back up your configuration to a file and move to another machine in a minute.
+
+PRIVACY
+
+Yuki has no accounts, collects no data, and there is no server anywhere that receives your information. Everything stays on your computer. The source code is open under the MIT license, so all of this is verifiable.
+
+NOTICE
+
+Yuki is an unofficial, independent client. It is not affiliated with, associated with, or endorsed by WhatsApp, Google, Telegram, Slack, Notion or any other service. Those names and logos belong to their respective owners and are used solely to identify the corresponding shortcut inside the application.
+```
+
+## Product features
+```
+All your web apps in a single window
+Separate sessions: several accounts of the same service at once
+Per-app RAM monitor
+Automatic sleep for the apps you are not using
+See how much disk each app uses and free it with one button
+Window lock with an encrypted PIN
+Native Windows notifications with a configurable sound
+Spell checker in Spanish and English
+Per-site camera and microphone permissions
+Back up your configuration to a file
+No telemetry: no data is collected
+Open source under the MIT license
+```
+
+## Keywords
+```
+multi app, messaging, productivity, desktop, web apps, workspace, organizer
+```
+
+## Short title / Developed by
+```
+Yuki
+Digital Fox
+```
+
+## Copyright and trademark information
+```
+© 2025-2026 Digital Fox. Released under the MIT license.
+
+Yuki is an unofficial, independent client. WhatsApp, Gmail, Telegram, Slack, Notion and the other services mentioned are trademarks of their respective owners; there is no affiliation, association or endorsement by them. Their logos are used solely to identify the corresponding shortcut inside the application.
+```
+
+## Screenshot captions
+```
+All your apps in one window, each with its own session
+Several accounts of the same service running at once
+A catalog of apps ready to add, or any URL
+Per-app RAM and disk monitor
+```
