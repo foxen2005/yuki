@@ -11,3 +11,4 @@ Thumbs.db
 *.enc
 legacy/
 dist-store/
+store-shots/
