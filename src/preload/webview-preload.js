@@ -3,6 +3,14 @@
 
 const { ipcRenderer } = require('electron')
 
+// Se lee aquí porque más abajo se borra window.process
+// Versión de Chromium, por dos vías que siempre coinciden con la cabecera
+// User-Agent. Sin número fijo de respaldo: uno escrito a mano envejece y
+// vuelve a crear la contradicción que este cambio justamente corrige.
+const CHROMIUM_VERSION =
+  (typeof process !== 'undefined' && process.versions && process.versions.chrome) ||
+  ((navigator.userAgent.match(/Chrome\/([\d.]+)/) || [])[1]) || ''
+
 // ── 1. window.chrome completo ────────────────────────────────────────────────
 if (!window.chrome || !window.chrome.runtime) {
   Object.defineProperty(window, 'chrome', {
@@ -108,10 +116,16 @@ try {
 } catch(e) {}
 
 // ── 4. navigator.userAgentData sin Electron ──────────────────────────────────
-if (navigator.userAgentData) {
+// Sin versión fiable es mejor no tocar nada que anunciar uno falso
+if (navigator.userAgentData && CHROMIUM_VERSION) {
+  // Versión real de Chromium. Tenerla fija aquí (estaba en 131) mientras la
+  // cabecera User-Agent anunciaba otra (134) es una contradicción que ningún
+  // Chrome real puede tener, y los sistemas antiabuso la detectan al instante.
+  const vFull = CHROMIUM_VERSION
+  const vMajor = vFull.split('.')[0]
   const brands = [
-    { brand: 'Google Chrome', version: '131' },
-    { brand: 'Chromium',      version: '131' },
+    { brand: 'Google Chrome', version: vMajor },
+    { brand: 'Chromium',      version: vMajor },
     { brand: 'Not_A Brand',   version: '24'  },
   ]
   try {
@@ -123,10 +137,10 @@ if (navigator.userAgentData) {
         getHighEntropyValues: async () => ({
           brands, mobile: false, platform: 'Windows',
           platformVersion: '10.0.0', architecture: 'x86', bitness: '64', model: '',
-          uaFullVersion: '131.0.6778.205',
+          uaFullVersion: vFull,
           fullVersionList: [
-            { brand: 'Google Chrome', version: '131.0.6778.205' },
-            { brand: 'Chromium',      version: '131.0.6778.205' },
+            { brand: 'Google Chrome', version: vFull },
+            { brand: 'Chromium',      version: vFull },
             { brand: 'Not_A Brand',   version: '24.0.0.0' },
           ],
         }),
@@ -156,21 +170,18 @@ try {
   })
 } catch(e) {}
 
-// ── 6. Ocultar webdriver ─────────────────────────────────────────────────────
-try {
-  Object.defineProperty(navigator, 'webdriver', { get: () => false, configurable: false })
-} catch(e) {}
+// navigator.webdriver NO se toca: en Electron ya vale false por sí solo.
+// Redefinirlo sustituía un getter nativo por uno de JavaScript, que es
+// justo lo que buscan los detectores de automatización.
 
 // Eliminar variables globales de Electron
 ;['__electron', '__electronBinding', 'electronAPI', 'electron', 'process'].forEach(key => {
   try { delete window[key] } catch(e) {}
 })
 
-const _origGetOwnPropDesc = Object.getOwnPropertyDescriptor.bind(Object)
-Object.getOwnPropertyDescriptor = function(target, key) {
-  if (key === 'webdriver' && target === navigator) return undefined
-  return _origGetOwnPropDesc(target, key)
-}
+// Tampoco se parchea Object.getOwnPropertyDescriptor: solo existía para
+// ocultar el override anterior, y reemplazar una función nativa delata al
+// cliente (su toString deja de decir [native code]).
 
 // ── 7. Abrir links externos en el browser del sistema ────────────────────────
 ;(function patchWindowOpen() {

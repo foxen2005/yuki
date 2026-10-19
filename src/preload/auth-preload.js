@@ -1,6 +1,13 @@
 // Preload para la ventana de autenticacion Google
 // Solo spoofing — sin ipcRenderer ni notificaciones
 
+// Versión de Chromium, por dos vías que siempre coinciden con la cabecera
+// User-Agent. Sin número fijo de respaldo: uno escrito a mano envejece y
+// vuelve a crear la contradicción que este cambio justamente corrige.
+const CHROMIUM_VERSION =
+  (typeof process !== 'undefined' && process.versions && process.versions.chrome) ||
+  ((navigator.userAgent.match(/Chrome\/([\d.]+)/) || [])[1]) || ''
+
 Object.defineProperty(window, 'chrome', {
   value: {
     app: {
@@ -41,14 +48,19 @@ Object.defineProperty(window, 'chrome', {
   configurable: false,
 })
 
-try {
-  Object.defineProperty(navigator, 'webdriver', { get: () => false, configurable: false })
-} catch(e) {}
+// navigator.webdriver NO se toca: en Electron ya vale false, y redefinirlo
+// lo vuelve más detectable, no menos.
 
-if (navigator.userAgentData) {
+// Sin versión fiable es mejor no tocar nada que anunciar uno falso
+if (navigator.userAgentData && CHROMIUM_VERSION) {
+  // Versión real de Chromium. Tenerla fija aquí (estaba en 131) mientras la
+  // cabecera User-Agent anunciaba otra (134) es una contradicción que ningún
+  // Chrome real puede tener, y los sistemas antiabuso la detectan al instante.
+  const vFull = CHROMIUM_VERSION
+  const vMajor = vFull.split('.')[0]
   const brands = [
-    { brand: 'Google Chrome', version: '131' },
-    { brand: 'Chromium',      version: '131' },
+    { brand: 'Google Chrome', version: vMajor },
+    { brand: 'Chromium',      version: vMajor },
     { brand: 'Not_A Brand',   version: '24'  },
   ]
   try {
@@ -60,10 +72,10 @@ if (navigator.userAgentData) {
         getHighEntropyValues: async () => ({
           brands, mobile: false, platform: 'Windows',
           platformVersion: '10.0.0', architecture: 'x86', bitness: '64', model: '',
-          uaFullVersion: '131.0.6778.205',
+          uaFullVersion: vFull,
           fullVersionList: [
-            { brand: 'Google Chrome', version: '131.0.6778.205' },
-            { brand: 'Chromium',      version: '131.0.6778.205' },
+            { brand: 'Google Chrome', version: vFull },
+            { brand: 'Chromium',      version: vFull },
             { brand: 'Not_A Brand',   version: '24.0.0.0' },
           ],
         }),
