@@ -1,8 +1,40 @@
-const { WebContentsView, session, shell, Menu } = require('electron')
+const { WebContentsView, session, shell, Menu, clipboard, dialog, BrowserWindow } = require('electron')
 const path = require('path')
+const fs = require('fs')
 const { spoofSession } = require('./session-manager')
 const { bindAppSwitchKeys } = require('./window')
 const permissions = require('./permissions')
+
+// Gmail, Docs y el buscador no enlazan al destino directamente: lo envuelven en
+// su propio redirector (https://www.google.com/url?q=<destino>). Sin deshacer
+// ese envoltorio el destino parece ser google.com, el enlace se tomaba como
+// interno y el clic se perdía sin abrir nada.
+function destinoReal(url) {
+  try {
+    const u = new URL(url)
+    // google.com, google.cl, google.co.uk — pero NO www.google.evil.ru
+    if (/(^|\.)google\.[a-z]{2,3}(\.[a-z]{2,3})?$/i.test(u.hostname) && (u.pathname === '/url' || u.pathname === '/imgres')) {
+      const real = u.searchParams.get('imgurl') || u.searchParams.get('q') || u.searchParams.get('url')
+      if (real && /^https?:/.test(real)) return real
+    }
+  } catch (e) {}
+  return url
+}
+
+// Sufijos de segundo nivel: sin esto, foo.co.uk y bar.co.uk comparten
+// "co.uk" y se tomarían por el mismo sitio.
+const SUFIJOS_2N = new Set(['co', 'com', 'net', 'org', 'gov', 'edu', 'ac', 'gob'])
+
+// Dominio registrable (ejemplo.com, ejemplo.co.uk) para decidir si un destino
+// pertenece a la misma app que la vista.
+function dominioBase(url) {
+  try {
+    const partes = new URL(url).hostname.toLowerCase().split('.')
+    if (partes.length < 2) return null
+    const n = (partes.length > 2 && SUFIJOS_2N.has(partes[partes.length - 2])) ? 3 : 2
+    return partes.slice(-n).join('.')
+  } catch (e) { return null }
+}
 
 class ViewManager {
   constructor(win) {
@@ -302,19 +334,117 @@ class ViewManager {
       if (!this.win.isDestroyed()) this.win.webContents.send('view:loading-stop', { id })
     })
 
-    wc.setWindowOpenHandler(({ url: openUrl }) => {
-      if (/^https?:/.test(openUrl)) {
-        try {
-          const currentBase = new URL(wc.getURL()).hostname.split('.').slice(-2).join('.')
-          const openBase    = new URL(openUrl).hostname.split('.').slice(-2).join('.')
-          if (openBase !== currentBase) shell.openExternal(openUrl)
-        } catch(e) {
-          shell.openExternal(openUrl)
-        }
+    wc.setWindowOpenHandler(({ url: openUrl, disposition }) => {
+      if (!/^https?:/.test(openUrl)) return { action: 'deny' }
+
+      const destino = destinoReal(openUrl)
+
+      // <a download>: descargar, no abrir una ventana
+      if (disposition === 'save-to-disk') {
+        wc.downloadURL(destino)
+        return { action: 'deny' }
+      }
+      const baseActual = dominioBase(wc.getURL())
+      const baseDestino = dominioBase(destino)
+
+      // Otro sitio: al navegador del sistema. Si no se puede determinar el
+      // dominio, se abre fuera igualmente antes que tragarse el clic.
+      if (!baseActual || !baseDestino || baseActual !== baseDestino) {
+        shell.openExternal(destino)
+        return { action: 'deny' }
+      }
+
+      // Mismo sitio: no se abre ventana. El clic en "Acceder" de Google apunta
+      // a accounts.google.com desde gmail.com y antes no hacía nada; ahora al
+      // menos se avisa, y el login va por su ventana dedicada, que comparte la
+      // partición y sabe cerrarse al terminar.
+      let hostDestino = ''
+      try { hostDestino = new URL(destino).hostname } catch (e) {}
+      if (hostDestino === 'accounts.google.com' && !this.win.isDestroyed()) {
+        this.win.webContents.send('view:needs-google-auth', { id, partition: `persist:${id}` })
       }
       return { action: 'deny' }
     })
 
+    this._menuContextual(wc)
+
+
+    // Mensajes desde webview-preload.js
+    wc.ipc.on('view:notification', (_, data) => {
+      if (!this.win.isDestroyed()) this.win.webContents.send('view:notification', { id, ...data })
+    })
+
+    wc.ipc.on('view:open-external', (_, url) => {
+      if (/^https?:/.test(url)) shell.openExternal(url)
+    })
+  }
+
+  // El menú nativo se sustituye por uno propio, así que todo lo que falte aquí
+  // simplemente no existe para el usuario. Lo usan las vistas y sus emergentes.
+  // Guarda la imagen del menú contextual. Hay dos caminos porque no existe uno
+  // que sirva para ambos casos:
+  //   http(s)      -> downloadURL, que descarga con las cookies de la sesión.
+  //                   Leerla desde la página fallaría por CORS en todo lo que
+  //                   viene de otro dominio (googleusercontent, pps.whatsapp.net).
+  //   blob:/data:  -> solo existen dentro del documento que los creó, así que
+  //                   el proceso principal no puede descargarlos: se leen en la
+  //                   página y se escriben aquí. Es el caso de WhatsApp Web.
+  async _guardarImagen(wc, srcURL, marco) {
+    try {
+      if (/^https?:/.test(srcURL)) { wc.downloadURL(srcURL); return }
+
+      let dataURL = srcURL
+      if (!/^data:/.test(srcURL)) {
+        // Un blob: de un adjunto de Gmail vive en su iframe, no en el marco
+        // principal: hay que pedírselo al marco donde se hizo clic derecho.
+        const donde = marco || wc
+        dataURL = await donde.executeJavaScript(`(async () => {
+          const r = await fetch(${JSON.stringify(srcURL)})
+          const b = await r.blob()
+          return await new Promise(res => {
+            const fr = new FileReader()
+            fr.onload = () => res(fr.result)
+            fr.readAsDataURL(b)
+          })
+        })()`)
+      }
+      if (typeof dataURL !== 'string' || !dataURL.startsWith('data:')) return
+
+      const cabecera = dataURL.slice(0, dataURL.indexOf(','))
+      const cuerpo = dataURL.slice(dataURL.indexOf(',') + 1)
+      const tipo = (/^data:([^;,]+)/.exec(dataURL) || [])[1] || 'image/png'
+      const ext = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/gif': 'gif',
+                    'image/webp': 'webp', 'image/svg+xml': 'svg' }[tipo] || 'png'
+
+      // Un data: sin ';base64' lleva el contenido como texto con escapes de URL
+      const datos = cabecera.includes(';base64')
+        ? Buffer.from(cuerpo, 'base64')
+        : Buffer.from(decodeURIComponent(cuerpo), 'utf8')
+
+      // El diálogo cuelga de la ventana donde se hizo clic: si lo colgáramos
+      // siempre de la principal, quedaría detrás de una emergente o invisible
+      // con Yuki minimizado en la bandeja.
+      const duena = BrowserWindow.fromWebContents(wc) || this.win
+      const { canceled, filePath } = await dialog.showSaveDialog(duena, {
+        defaultPath: `imagen-${Date.now()}.${ext}`,
+        filters: [{ name: 'Imagen', extensions: [ext] }],
+      })
+      if (canceled || !filePath) return
+      fs.writeFileSync(filePath, datos)
+    } catch (e) {
+      // Antes un fallo aquí no decía nada y parecía que la imagen se guardó
+      const duena = BrowserWindow.fromWebContents(wc) || this.win
+      try {
+        dialog.showMessageBox(duena, {
+          type: 'warning', title: 'Yuki', noLink: true,
+          message: 'No se pudo guardar la imagen',
+          detail: String((e && e.message) || e),
+        })
+      } catch (e2) {}
+    }
+  }
+
+  _menuContextual(wc) {
     wc.on('context-menu', (_, params) => {
       const { selectionText, isEditable, editFlags, misspelledWord, dictionarySuggestions } = params
       const items = []
@@ -333,6 +463,33 @@ class ViewManager {
         })
         items.push({ type: 'separator' })
       }
+      // Imágenes: al sustituir el menú nativo se perdían guardar y copiar, así
+      // que el clic derecho sobre una foto de WhatsApp no ofrecía nada.
+      if (params.mediaType === 'image' && params.srcURL) {
+        items.push(
+          { label: 'Guardar imagen como…', click: () => this._guardarImagen(wc, params.srcURL, params.frame) },
+          { label: 'Copiar imagen',        click: () => wc.copyImageAt(params.x, params.y) },
+        )
+        // Una dirección blob: o data: no sirve fuera de la página que la creó
+        if (/^https?:/.test(params.srcURL)) {
+          items.push(
+            { label: 'Copiar dirección de la imagen', click: () => clipboard.writeText(params.srcURL) },
+            { label: 'Abrir imagen en el navegador',  click: () => shell.openExternal(params.srcURL) },
+          )
+        }
+        items.push({ type: 'separator' })
+      }
+
+      // Enlaces: el destino real, deshaciendo el redirector de Google
+      if (params.linkURL && /^https?:/.test(params.linkURL)) {
+        const destino = destinoReal(params.linkURL)
+        items.push(
+          { label: 'Abrir enlace en el navegador', click: () => shell.openExternal(destino) },
+          { label: 'Copiar dirección del enlace',  click: () => clipboard.writeText(destino) },
+          { type: 'separator' },
+        )
+      }
+
       if (isEditable) {
         if (editFlags.canCut && selectionText)  items.push({ role: 'cut',       label: 'Cortar' })
         if (editFlags.canCopy && selectionText) items.push({ role: 'copy',      label: 'Copiar' })
@@ -341,16 +498,16 @@ class ViewManager {
       } else if (selectionText && selectionText.trim()) {
         items.push({ role: 'copy', label: 'Copiar' })
       }
+
+      // Siempre algo que ofrecer: antes, el clic derecho sobre una zona sin
+      // texto ni campo editable no abría ningún menú.
+      if (!items.length) {
+        items.push({ label: 'Recargar', click: () => wc.reload() })
+      }
+
+      // Un separador final suelto queda feo
+      while (items.length && items[items.length - 1].type === 'separator') items.pop()
       if (items.length) Menu.buildFromTemplate(items).popup()
-    })
-
-    // Mensajes desde webview-preload.js
-    wc.ipc.on('view:notification', (_, data) => {
-      if (!this.win.isDestroyed()) this.win.webContents.send('view:notification', { id, ...data })
-    })
-
-    wc.ipc.on('view:open-external', (_, url) => {
-      if (/^https?:/.test(url)) shell.openExternal(url)
     })
   }
 
