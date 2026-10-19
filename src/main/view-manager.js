@@ -21,20 +21,6 @@ function destinoReal(url) {
   return url
 }
 
-// Sufijos de segundo nivel: sin esto, foo.co.uk y bar.co.uk comparten
-// "co.uk" y se tomarían por el mismo sitio.
-const SUFIJOS_2N = new Set(['co', 'com', 'net', 'org', 'gov', 'edu', 'ac', 'gob'])
-
-// Dominio registrable (ejemplo.com, ejemplo.co.uk) para decidir si un destino
-// pertenece a la misma app que la vista.
-function dominioBase(url) {
-  try {
-    const partes = new URL(url).hostname.toLowerCase().split('.')
-    if (partes.length < 2) return null
-    const n = (partes.length > 2 && SUFIJOS_2N.has(partes[partes.length - 2])) ? 3 : 2
-    return partes.slice(-n).join('.')
-  } catch (e) { return null }
-}
 
 class ViewManager {
   constructor(win) {
@@ -344,25 +330,32 @@ class ViewManager {
         wc.downloadURL(destino)
         return { action: 'deny' }
       }
-      const baseActual = dominioBase(wc.getURL())
-      const baseDestino = dominioBase(destino)
-
-      // Otro sitio: al navegador del sistema. Si no se puede determinar el
-      // dominio, se abre fuera igualmente antes que tragarse el clic.
-      if (!baseActual || !baseDestino || baseActual !== baseDestino) {
-        shell.openExternal(destino)
+      // El login de Google tiene su propia ventana, que comparte la partición
+      // de la app y sabe cerrarse al terminar. Mandarlo al navegador dejaría
+      // la sesión en el navegador y no en Yuki.
+      //
+      // Solo vale cuando la app es de Google: el banner lleva a ServiceLogin de
+      // Gmail, así que en una app ajena con "Iniciar sesión con Google" robaría
+      // el OAuth y el usuario nunca podría terminarlo. Ahí va al navegador.
+      let hostDestino = ''
+      try { hostDestino = new URL(destino).hostname } catch (e) {}
+      let hostApp = ''
+      try { hostApp = new URL(wc.getURL()).hostname } catch (e) {}
+      const appEsDeGoogle = /(^|\.)google\.com$/i.test(hostApp)
+      if (hostDestino === 'accounts.google.com' && appEsDeGoogle) {
+        if (!this.win.isDestroyed()) {
+          this.win.webContents.send('view:needs-google-auth', { id, partition: `persist:${id}` })
+        }
         return { action: 'deny' }
       }
 
-      // Mismo sitio: no se abre ventana. El clic en "Acceder" de Google apunta
-      // a accounts.google.com desde gmail.com y antes no hacía nada; ahora al
-      // menos se avisa, y el login va por su ventana dedicada, que comparte la
-      // partición y sabe cerrarse al terminar.
-      let hostDestino = ''
-      try { hostDestino = new URL(destino).hostname } catch (e) {}
-      if (hostDestino === 'accounts.google.com' && !this.win.isDestroyed()) {
-        this.win.webContents.send('view:needs-google-auth', { id, partition: `persist:${id}` })
-      }
+      // Todo lo demás al navegador del sistema, sea del mismo sitio o no.
+      // Antes solo salían los de otro dominio y el resto se denegaba en
+      // silencio: un adjunto de Drive enlazado en un correo es
+      // drive.google.com visto desde mail.google.com, así que al pulsarlo no
+      // ocurría absolutamente nada. Abrirlo dentro exigiría ventanas propias,
+      // descartadas porque el bloqueo con PIN no las tapa.
+      shell.openExternal(destino)
       return { action: 'deny' }
     })
 
