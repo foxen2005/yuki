@@ -49,12 +49,9 @@
   <input type="file" id="audio-file-input" accept="audio/*" style="display:none" />
 
   <!-- Lock Screen -->
-  <div id="lock-overlay">
-    <div style="font-size:54px">🔒</div>
-    <div style="font-size:17px;font-weight:600;color:#e9edef">Yuki bloqueado</div>
-    <input type="password" id="lock-pin-input" placeholder="• • • •" maxlength="8" autocomplete="off" />
-    <div id="lock-error">PIN incorrecto</div>
-  </div>
+  <!-- El bloqueo con PIN ya no vive aquí: es una ventana propia
+       (src/renderer/lock.html), porque una capa del DOM no podía tapar ni las
+       WebContentsView nativas ni las ventanas flotantes. -->
 
   <!-- Settings Drawer -->
   <div id="settings-overlay">
@@ -136,8 +133,8 @@
             <div class="settings-label">
               <span class="settings-icon">🔒</span>
               <div>
-                <div class="settings-name">Bloquear al minimizar</div>
-                <div class="settings-desc">Pide PIN al restaurar la ventana</div>
+                <div class="settings-name">Bloquear Yuki con PIN</div>
+                <div class="settings-desc">Lo pide al abrir Yuki y al volver desde la bandeja</div>
               </div>
             </div>
             <div class="settings-control">

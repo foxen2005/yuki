@@ -1,12 +1,13 @@
-const { ipcMain, dialog, shell, app, session, safeStorage } = require('electron')
+const { ipcMain, dialog, shell, app, session } = require('electron')
 const permissions = require('./permissions')
 const path = require('path')
 const fs = require('fs')
 const { openGoogleLogin } = require('./google-auth')
 const { checkNow } = require('./updater')
+const pin = require('./pin')
+const lockWindow = require('./lock-window')
 
 function registerHandlers({ win, viewManager }) {
-  const PIN_PATH = path.join(app.getPath('userData'), 'yuki-pin.enc')
 
   // ── Ciclo de vida de vistas ────────────────────────────────────────────────
   ipcMain.handle('view:open', (_, id, url, partition) => {
@@ -16,7 +17,8 @@ function registerHandlers({ win, viewManager }) {
     viewManager.activate(id)
   })
   ipcMain.handle('view:sleep', (_, id) => {
-    viewManager.sleep(id)
+    // Viene del botón "Liberar memoria": orden del usuario, no el automático
+    viewManager.sleep(id, { manual: true })
   })
   ipcMain.handle('view:destroy', (_, id) => {
     viewManager.destroy(id)
@@ -196,35 +198,52 @@ function registerHandlers({ win, viewManager }) {
   ipcMain.on('window:quit', () => { app.isQuiting = true; app.quit() })
 
   // ── PIN (safeStorage) ─────────────────────────────────────────────────────
-  ipcMain.handle('pin:save', (_, pin) => {
-    try {
-      if (safeStorage.isEncryptionAvailable()) {
-        fs.writeFileSync(PIN_PATH, safeStorage.encryptString(pin))
-      } else {
-        fs.writeFileSync(PIN_PATH, pin, 'utf8')
-      }
-      return { ok: true }
-    } catch(e) { return { ok: false, error: e.message } }
+  // El almacenamiento vive en pin.js: la ventana de bloqueo también lo necesita
+  // y no puede pasar por estos manejadores, que son del renderer principal.
+  // Sin pin:verify aquí: quien comprueba el PIN es la ventana de bloqueo, por
+  // su propio canal (lock:verify). Un renderer de app comprometido no tiene por
+  // qué poder probar PINs contra el almacén.
+  ipcMain.handle('pin:save', (_, valor) => {
+    // Con el bloqueo puesto, cambiar el PIN desde el renderer principal era
+    // saltárselo: guardas 0000 y entras. La pantalla de bloqueo está delante,
+    // pero el renderer sigue vivo y escuchando IPC.
+    if (lockWindow.bloqueado()) return { ok: false, error: 'Yuki está bloqueado' }
+    const texto = String(valor ?? '')
+    // La interfaz ya lo exige, pero un PIN vacío aquí lo aceptaría cualquiera
+    if (texto.length < 4) return { ok: false, error: 'Mínimo 4 caracteres' }
+    return pin.guardar(texto)
+  })
+  ipcMain.handle('pin:has',  () => pin.existe())
+
+  // ── Bloqueo ───────────────────────────────────────────────────────────────
+  // Quién decide bloquear sigue siendo el renderer: el interruptor de activado
+  // vive en su localStorage, junto al resto de ajustes.
+  ipcMain.handle('lock:show', async () => {
+    // mostrar() devuelve una promesa que no resuelve hasta que la capa está en
+    // pantalla: el renderer la espera antes de enganchar las vistas.
+    let r
+    try { r = await lockWindow.mostrar(win) }
+    catch (e) { r = { ok: false, motivo: 'error', error: e.message } }
+    // Si el bloqueo no llegó a aparecer, por el motivo que sea, las flotantes
+    // que estuvieran escondidas esperándolo tienen que volver: si no, se
+    // quedan invisibles y vivas impidiendo que su app se duerma nunca.
+    if (!r || !r.ok) {
+      lockWindow.setHabilitado(false)
+      try { viewManager.sincronizarFlotantes() } catch (e) {}
+    }
+    return r
   })
 
-  ipcMain.handle('pin:verify', (_, pin) => {
-    try {
-      if (!fs.existsSync(PIN_PATH)) return { match: false }
-      let stored
-      if (safeStorage.isEncryptionAvailable()) {
-        stored = safeStorage.decryptString(fs.readFileSync(PIN_PATH))
-      } else {
-        stored = fs.readFileSync(PIN_PATH, 'utf8')
-      }
-      return { match: stored === pin }
-    } catch(e) { return { match: false } }
-  })
+  // El renderer avisa del estado del interruptor al arrancar y al cambiarlo
+  ipcMain.on('lock:set-enabled', (_, v) => lockWindow.setHabilitado(v))
 
-  ipcMain.handle('pin:has', () => fs.existsSync(PIN_PATH))
-
-  ipcMain.handle('pin:delete', () => {
-    try { if (fs.existsSync(PIN_PATH)) fs.unlinkSync(PIN_PATH); return { ok: true } }
-    catch(e) { return { ok: false, error: e.message } }
+  // Solo lo llama lock-preload.js, desde la propia ventana de bloqueo.
+  ipcMain.handle('lock:verify', (_, valor) => {
+    const r = lockWindow.desbloquear(valor)
+    // lock-window devuelve las ventanas que escondió él; las que ya estaban
+    // escondidas antes de bloquear las recupera el ViewManager.
+    if (r.match) { try { viewManager.sincronizarFlotantes() } catch (e) {} }
+    return r
   })
 }
 

@@ -59,9 +59,15 @@ contextBridge.exposeInMainWorld('yukiAPI', {
 
   // ── PIN (almacenamiento seguro) ──────────────────────────────────────────
   savePin:   (pin) => ipcRenderer.invoke('pin:save', pin),
-  verifyPin: (pin) => ipcRenderer.invoke('pin:verify', pin),
   hasPin:    ()    => ipcRenderer.invoke('pin:has'),
-  deletePin: ()    => ipcRenderer.invoke('pin:delete'),
+  // verifyPin y deletePin ya no se exponen: comprobar el PIN es cosa de la
+  // ventana de bloqueo (lock-preload.js) y no hay forma de borrarlo en la
+  // interfaz. Dejarlos aquí solo daba superficie de ataque al renderer.
+
+  // El bloqueo es una ventana aparte: aquí solo se pide que aparezca. Quitarla
+  // es cosa suya, con el PIN correcto.
+  showLock:  ()    => ipcRenderer.invoke('lock:show'),
+  setLockEnabled: (v) => ipcRenderer.send('lock:set-enabled', v),
 
   // ── Suscripción a eventos del proceso principal ──────────────────────────
   on: (channel, cb) => {

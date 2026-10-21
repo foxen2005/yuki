@@ -497,19 +497,8 @@ body {
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* Lock screen */
-#lock-overlay {
-  display: none; position: fixed; inset: 0; z-index: 9999;
-  background: var(--bg-main); backdrop-filter: blur(20px); flex-direction: column;
-  align-items: center; justify-content: center; gap: 24px;
-}
-#lock-overlay.visible { display: flex; }
-#lock-pin-input {
-  background: var(--bg-card); border: 2px solid var(--border-color); border-radius: var(--radius-lg);
-  color: var(--text-main); font-size: 32px; padding: 16px; outline: none;
-  text-align: center; width: 260px; letter-spacing: 12px;
-  transition: var(--transition);
-}
-#lock-pin-input:focus { border-color: var(--primary); box-shadow: 0 0 20px rgba(124, 58, 237, 0.3); }
+/* El bloqueo con PIN se mudó a su propia ventana (src/renderer/lock.html) y
+   lleva sus estilos dentro: tiene que poder pintarse aunque esta hoja falle. */
 
 /* Lucide Icons support */
 .icon-lucide {

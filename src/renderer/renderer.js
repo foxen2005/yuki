@@ -34,49 +34,62 @@ function getCustomSoundData() {
 function getLock() {
   try { return JSON.parse(localStorage.getItem('yuki-lock') || '{}') } catch { return {} }
 }
-function saveLock(s) { localStorage.setItem('yuki-lock', JSON.stringify(s)) }
-
-function showLock() {
-  const overlay = document.getElementById('lock-overlay')
-  overlay.classList.add('visible')
-  // La vista nativa se dibuja sobre el DOM: sin esto el lock quedaba tapado
-  // y la app seguía visible y clickeable
-  syncViewLayout()
-  const inp = document.getElementById('lock-pin-input')
-  inp.value = ''
-  setTimeout(() => inp.focus(), 80)
+function saveLock(s) {
+  localStorage.setItem('yuki-lock', JSON.stringify(s))
+  // El proceso principal necesita saberlo para no enseñar las ventanas
+  // flotantes en el hueco entre mostrar Yuki y pedir el bloqueo.
+  try { window.yukiAPI.setLockEnabled(!!s.enabled) } catch (e) {}
 }
-function hideLock() {
-  document.getElementById('lock-overlay').classList.remove('visible')
-  syncViewLayout()
+
+// El bloqueo ya no es una capa del DOM sino una ventana propia (lock-window.js):
+// una WebContentsView se dibuja encima de cualquier HTML, y una ventana flotante
+// ni siquiera estaba bajo el control de este renderer. Aquí solo se pide que
+// aparezca; quitarla es cosa suya, con el PIN correcto.
+async function showLock() {
+  let r
+  try {
+    r = await window.yukiAPI.showLock()
+  } catch (e) {
+    // Si esto falla, Yuki se queda a la vista y en marcha con el bloqueo
+    // activado. Callarlo sería lo peor: el usuario lo cree bloqueado y no lo
+    // está. Al menos que lo sepa y pueda cerrar la app.
+    console.error('[Yuki] no se pudo bloquear:', e)
+    showToast('No se pudo bloquear Yuki — ciérralo para proteger tus sesiones', 6000)
+    return
+  }
+  // Sin PIN guardado (o con el almacén ilegible) la ventana no se muestra: no
+  // habría forma de quitarla.
+  //
+  // No se toca el ajuste guardado. Un almacén ilegible puede serlo solo esta
+  // vez (un archivo a medio escribir, el perfil de Windows montándose todavía),
+  // y apagarlo dejaba el bloqueo desactivado para siempre aunque al día
+  // siguiente el PIN volviera a leerse. De devolver las flotantes escondidas se
+  // encarga el proceso principal en el mismo lock:show.
+  if (r && r.motivo === 'sin-pin') {
+    showToast('Yuki no se bloqueó: no encuentra un PIN que lo pueda quitar. Vuelve a guardarlo en Configuración.', 7000)
+  } else if (r && !r.ok) showToast('No se pudo bloquear Yuki', 4000)
+}
+
+// Pedirlo es idempotente: si ya está bloqueado, el proceso principal solo
+// devuelve el foco a la capa.
+async function bloquearSiProcede() {
+  try {
+    const activo = !!getLock().enabled
+    window.yukiAPI.setLockEnabled(activo)
+    if (activo) await showLock()
+  } catch (e) {}
 }
 
 // ── Layout de las vistas nativas ──────────────────────────────────────────────
 // Único punto que decide si las WebContentsViews se ven o se empujan fuera de
-// pantalla. Cualquier capa DOM que deba quedar encima (lock, settings) se
-// declara aquí en vez de llamar resizeViews() por su cuenta.
+// pantalla. Cualquier capa DOM que deba quedar encima se declara aquí en vez de
+// llamar resizeViews() por su cuenta. El bloqueo ya no aparece: lo tapa una
+// ventana de verdad y las vistas pueden quedarse donde están.
 function viewsShouldHide() {
-  return document.getElementById('lock-overlay').classList.contains('visible')
-    || document.getElementById('settings-overlay').classList.contains('open')
+  return document.getElementById('settings-overlay').classList.contains('open')
 }
 function syncViewLayout() {
   window.yukiAPI.resizeViews(viewsShouldHide() ? 9999 : 72, 12).catch(() => { })
-}
-
-async function tryUnlock(pin) {
-  const res = await window.yukiAPI.verifyPin(pin)
-  if (res.match) {
-    hideLock()
-  } else {
-    const inp = document.getElementById('lock-pin-input')
-    const err = document.getElementById('lock-error')
-    inp.classList.remove('lock-shake')
-    void inp.offsetWidth
-    inp.classList.add('lock-shake')
-    err.classList.add('show')
-    inp.value = ''
-    setTimeout(() => { inp.classList.remove('lock-shake'); err.classList.remove('show') }, 1600)
-  }
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
@@ -861,10 +874,18 @@ function hideGoogleAuthBanner() {
     if (lockToggle) lockToggle.checked = !!lockCfg.enabled
 
     window.yukiAPI.hasPin().then(has => {
-      if (pinStatus) pinStatus.textContent = has ? 'PIN configurado configurado' : 'Sin PIN configurado'
+      if (pinStatus) pinStatus.textContent = has ? 'PIN configurado' : 'Sin PIN configurado'
     })
 
-    if (lockToggle) lockToggle.addEventListener('change', () => {
+    // Activarlo sin PIN dejaba el ajuste en "sí" y la app abierta de par en
+    // par: el bloqueo se niega a aparecer porque no habría forma de quitarlo.
+    // Se revierte el interruptor para que no mienta.
+    if (lockToggle) lockToggle.addEventListener('change', async () => {
+      if (lockToggle.checked && !(await window.yukiAPI.hasPin())) {
+        lockToggle.checked = false
+        showToast('Primero guarda un PIN aquí abajo', 3500)
+        return
+      }
       saveLock({ ...getLock(), enabled: lockToggle.checked })
     })
     if (pinSaveBtn) pinSaveBtn.addEventListener('click', async () => {
@@ -873,17 +894,10 @@ function hideGoogleAuthBanner() {
       const res = await window.yukiAPI.savePin(val)
       if (res.ok) {
         pinSetupInp.value = ''
-        if (pinStatus) pinStatus.textContent = 'PIN configurado configurado'
+        if (pinStatus) pinStatus.textContent = 'PIN configurado'
         showToast('PIN guardado')
       }
     })
-
-    const lockPinInput = document.getElementById('lock-pin-input')
-    if (lockPinInput) {
-      lockPinInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') tryUnlock(lockPinInput.value)
-      })
-    }
 
     document.getElementById('settings-backdrop').addEventListener('click', closeSettings)
     document.getElementById('btn-add-custom').addEventListener('click', addCustomApp)
@@ -1148,9 +1162,16 @@ async function migratePinFromStorage() {
   try {
     const lockData = JSON.parse(localStorage.getItem('yuki-lock') || '{}')
     if (lockData.pin) {
-      await window.yukiAPI.savePin(lockData.pin)
-      localStorage.setItem('yuki-lock', JSON.stringify({ enabled: !!lockData.enabled }))
-      console.log('[Yuki] PIN migrado a almacenamiento seguro')
+      // Solo se borra el viejo si el nuevo quedó guardado de verdad. pin:save
+      // ahora puede negarse (PIN corto, error de cifrado) y borrarlo igual
+      // dejaba a Yuki sin PIN, con el bloqueo puesto y abriéndose solo.
+      const res = await window.yukiAPI.savePin(lockData.pin)
+      if (res && res.ok) {
+        localStorage.setItem('yuki-lock', JSON.stringify({ enabled: !!lockData.enabled }))
+        console.log('[Yuki] PIN migrado a almacenamiento seguro')
+      } else {
+        console.warn('[Yuki] no se pudo migrar el PIN, se conserva el anterior:', res && res.error)
+      }
     }
   } catch (e) { console.warn('[Yuki] PIN migration error:', e) }
 }
@@ -1171,6 +1192,19 @@ async function tryRestoreFromDisk() {
 async function init() {
   await tryRestoreFromDisk()
   await migratePinFromStorage()
+
+  // Arranque en frío. Antes solo se bloqueaba al volver desde la bandeja o la
+  // barra de tareas, así que saliendo de Yuki del todo y abriéndolo de nuevo se
+  // entraba sin PIN.
+  //
+  // Va aquí arriba, en cuanto el PIN está migrado y antes de cualquier otra
+  // cosa: si una migración o render() fallan, el catch de abajo levanta la app
+  // igualmente y se quedaría a la vista con el bloqueo activado.
+  //
+  // Y se espera: render() engancha las vistas de las apps al instante, así que
+  // sin el await el correo alcanzaba a pintarse antes de que la capa estuviera
+  // delante.
+  await bloquearSiProcede()
 
   // Detectar primera ejecución de v0.2.0 para migraciones
   if (!localStorage.getItem('yuki-version')) {
@@ -1193,4 +1227,9 @@ async function init() {
   render()
 }
 
-init().catch(e => { console.error('[Yuki] init error:', e); render() })
+init().catch(e => {
+  console.error('[Yuki] init error:', e)
+  // El bloqueo se pide otra vez por si el fallo ocurrió antes de llegar a él
+  bloquearSiProcede()
+  render()
+})

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<!-- CSP: nada remoto, ni siquiera inline. Es la ventana que guarda el acceso a
+     todas las sesiones; no es sitio para relajar la política del shell. -->
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'self'; script-src 'self'; base-uri 'none'; object-src 'none'; frame-src 'none'" />
+<title>Yuki bloqueado</title>
+<link rel="stylesheet" href="lock.css" />
+</head>
+<body>
+  <div class="candado" aria-hidden="true">🔒</div>
+  <h1>Yuki bloqueado</h1>
+  <label for="pin" class="aviso">Introduce tu PIN para continuar</label>
+  <input type="password" id="pin" maxlength="32" autocomplete="off"
+         aria-describedby="aviso" autofocus />
+  <div class="aviso" id="aviso" role="status" aria-live="polite"></div>
+  <script src="lock.js"></script>
+</body>
+</html>

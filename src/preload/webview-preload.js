@@ -186,46 +186,149 @@ try {
 // ── 7. Abrir links externos en el browser del sistema ────────────────────────
 ;(function patchWindowOpen() {
   const _open = window.open.bind(window)
-  const ownHost = location.hostname
 
-  function isExternal(url) {
-    try {
-      const h = new URL(String(url)).hostname
-      const base = ownHost.split('.').slice(-2).join('.')
-      return !h.endsWith(base)
-    } catch(e) { return false }
+  // Esquemas que hay que entregar al sistema porque Chromium no los abre en una
+  // ventana. Es una lista cerrada, no "todo lo que no sea http": un blob: o un
+  // data: los abre Chromium perfectamente (así descarga WhatsApp sus archivos)
+  // y mandarlos fuera los dejaba muertos. El proceso principal vuelve a filtrar
+  // por esquema antes de lanzar nada.
+  //
+  // Antes aquí se comparaba el dominio base y lo "interno" caía al window.open
+  // real, que el principal denegaba: devolvía null y Gmail cantaba "bloqueador
+  // de ventanas emergentes" en cada enlace de Drive. Qué hacer con un http(s)
+  // lo decide el proceso principal, no este preload.
+  // La misma lista corta que filtra el proceso principal: fuera los esquemas
+  // que lanzan una aplicación instalada (msteams:, zoommtg:, slack:…), que una
+  // página podría disparar sin que el usuario haya pulsado nada.
+  const ESQUEMAS_AL_SISTEMA = /^(mailto|tel|callto|sms|webcal):/i
+
+  // Sufijos de segundo nivel: sin esto, foo.co.uk y bar.co.uk comparten "co.uk"
+  // y se tomarían por el mismo sitio.
+  const SUFIJOS_2N = new Set(['co', 'com', 'net', 'org', 'gov', 'edu', 'ac', 'gob'])
+
+  // Resuelve relativas contra la página: '/login' también es http
+  function esHttp(url) {
+    try { return /^https?:$/i.test(new URL(String(url), location.href).protocol) }
+    catch (e) { return false }
   }
+
+  function absoluta(url) {
+    try { return new URL(String(url), location.href).href } catch (e) { return String(url) }
+  }
+
+  function dominioBase(host) {
+    const partes = String(host || '').toLowerCase().split('.')
+    if (partes.length < 2) return partes.join('.')
+    const n = (partes.length > 2 && SUFIJOS_2N.has(partes[partes.length - 2])) ? 3 : 2
+    return partes.slice(-n).join('.')
+  }
+
+  // Compara el dominio registrable, no el origen. Con el origen, el enlace de
+  // cerrar sesión de Gmail (accounts.google.com desde mail.google.com) contaba
+  // como externo y se iba al navegador: cerraba la sesión del Chrome del
+  // usuario y dejaba la de Yuki intacta.
+  function esDeOtroSitio(url) {
+    try {
+      return dominioBase(new URL(String(url), location.href).hostname) !== dominioBase(location.hostname)
+    } catch (e) { return false }
+  }
+
+  // Ventana de mentira. Si window.open devuelve null, algunas apps
+  // (WhatsApp/Meta, Gmail) lo toman por "popup bloqueado": unas avisan al
+  // usuario y otras recurren a window.location.href, que saca al usuario de la
+  // app. Devolver esto las deja tranquilas.
+  function ventanaFalsa(url) {
+    const falsa = {
+      closed: false,
+      close()  { this.closed = true },
+      focus()  {},
+      blur()   {},
+      postMessage() {},
+      location: { href: String(url) },
+    }
+    setTimeout(() => { falsa.closed = true }, 300)
+    return falsa
+  }
+
+  // _self, _parent y _top reutilizan el contexto actual: no crean ventana, así
+  // que setWindowOpenHandler ni se entera. Un window.open a otro sitio con uno
+  // de esos destinos sustituía la vista de la app por la página ajena, sin
+  // barra de direcciones ni botón de atrás para volver.
+  const DESTINOS_EN_SITIO = /^_(self|parent|top)$/i
 
   window.open = function(url, target, features) {
-    if (url && /^https?:/.test(String(url)) && isExternal(url)) {
-      try { ipcRenderer.send('view:open-external', String(url)) } catch(e) {}
-      // Devolver objeto ventana falso — si devolvemos null, algunas apps (WhatsApp/Meta)
-      // detectan "popup bloqueado" y hacen fallback con window.location.href hacia Facebook
-      const fakeWin = {
-        closed: false,
-        close()  { this.closed = true },
-        focus()  {},
-        blur()   {},
-        postMessage() {},
-        location: { href: String(url) },
-      }
-      setTimeout(() => { fakeWin.closed = true }, 300)
-      return fakeWin
+    const u = String(url || '')
+    if (u && ESQUEMAS_AL_SISTEMA.test(u)) {
+      try { ipcRenderer.send('view:open-external', u) } catch(e) {}
+      return ventanaFalsa(u)
     }
-    return _open(url, target, features)
+    if (u && DESTINOS_EN_SITIO.test(String(target || '')) && esHttp(u) && esDeOtroSitio(u)) {
+      // Absoluta: una protocol-relative ('//ejemplo.org/x') no pasa el filtro de
+      // esquemas del proceso principal y el clic se perdía sin más.
+      try { ipcRenderer.send('view:open-external', absoluta(u)) } catch(e) {}
+      return ventanaFalsa(u)
+    }
+    const real = _open(url, target, features)
+    // null en un http(s) = el proceso principal la denegó, pero no se perdió:
+    // la mandó al navegador (un login) o la descargó. La página no tiene por
+    // qué enterarse. Solo http(s): para un about:blank o un blob: la página
+    // espera una ventana con document, y el muñeco le haría explotar un
+    // document.write donde antes solo recibía null.
+    //
+    // Se resuelve contra la página porque window.open('/login') es de lo más
+    // corriente y comparado en crudo no parecía http.
+    //
+    // Con 'noopener' no vale: ahí window.open devuelve null aunque la ventana
+    // se haya creado — es lo que significa. Dar el muñeco engañaría a la página
+    // (su w.close() no cerraría la flotante de verdad, que seguiría abierta).
+    const sinOpener = /\bnoopener\b/i.test(String(features || ''))
+    if (!real && !sinOpener && u && esHttp(u)) return ventanaFalsa(u)
+    return real
   }
 
+  // target="_top" navega el marco principal y nunca pasa por
+  // setWindowOpenHandler: sin esto, un enlace a otro sitio sustituye la app
+  // entera por esa página y solo se vuelve recargando. Va al navegador, que es
+  // lo que ya hacía antes: reconducirlo por window.open parecía más coherente,
+  // pero si el proceso principal lo deniega (un accounts.google.com, que
+  // dispara el banner) el clic se pierde y los enlaces de cerrar sesión o
+  // cambiar de cuenta dejan de funcionar. Al navegador siempre pasa algo.
+  //
+  // En fase de captura, para adelantarse a la navegación.
+  //
+  // Esto solo protege el documento principal: el preload no se inyecta en los
+  // subframes (haría falta nodeIntegrationInSubFrames, y meter todo este
+  // preload dentro de cada iframe de anuncio no compensa). Un _top disparado
+  // desde un iframe sigue pudiendo sustituir la vista; es la misma limitación
+  // que había antes, no algo que introduzca este cambio.
   document.addEventListener('click', function(e) {
     const a = e.target.closest('a[href]')
     if (!a) return
     const href = a.href || ''
-    const tgt  = a.getAttribute('target') || ''
-    if (/^https?:/.test(href) && isExternal(href) &&
-        (tgt === '_blank' || tgt === '_new' || tgt === '_top')) {
-      e.preventDefault()
-      try { ipcRenderer.send('view:open-external', href) } catch(e) {}
-    }
+    if (a.getAttribute('target') !== '_top') return
+    if (!/^https?:/i.test(href) || !esDeOtroSitio(href)) return
+    e.preventDefault()
+    try { ipcRenderer.send('view:open-external', href) } catch(e) {}
   }, true)
+
+  // mailto:, tel: y demás: Chromium no los abre en una ventana, los entrega al
+  // sistema. Un blob: o un data: NO entran aquí: los abre Chromium y pararlos
+  // los dejaba muertos (es como WhatsApp descarga sus archivos).
+  //
+  // Sin mirar el target, porque la mayoría de los "escríbeme" de una web son un
+  // <a href="mailto:…"> pelado. Pero en fase de burbuja y respetando
+  // defaultPrevented: Gmail captura sus propios mailto: para abrir su
+  // ventana de redactar, y adelantarse le robaba el clic para lanzar el cliente
+  // de correo de Windows.
+  document.addEventListener('click', function(e) {
+    if (e.defaultPrevented) return
+    const a = e.target.closest('a[href]')
+    if (!a) return
+    const href = a.href || ''
+    if (!href || !ESQUEMAS_AL_SISTEMA.test(href)) return
+    e.preventDefault()
+    try { ipcRenderer.send('view:open-external', href) } catch(e) {}
+  })
 })()
 
 // ── 8. Interceptar notificaciones ────────────────────────────────────────────

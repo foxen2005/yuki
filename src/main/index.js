@@ -1,4 +1,4 @@
-const { app, session } = require('electron')
+const { app, session, Menu } = require('electron')
 const { spoofSession } = require('./session-manager')
 const { createWindow, createTray, registerShortcuts, getWin, showMain } = require('./window')
 const ViewManager = require('./view-manager')
@@ -30,6 +30,13 @@ app.commandLine.appendSwitch('enable-features', 'NetworkService,NetworkServiceIn
 // Sin esto Chromium dimensiona la caché en disco según el espacio libre y
 // crece sin freno: las particiones de las apps llegaron a 9,4 GB.
 app.commandLine.appendSwitch('disk-cache-size', String(200 * 1024 * 1024))
+
+// Yuki no tiene barra de menú propia, pero Electron pone una por defecto y con
+// ella llega el rol "Toggle Developer Tools" y su Ctrl+Shift+I. Se quitaron los
+// atajos globales en su día y este seguía abriendo la consola sobre cualquier
+// app — y sobre el bloqueo con PIN. Cortar, copiar y pegar los sigue atendiendo
+// Chromium por su cuenta, no dependen del menú.
+Menu.setApplicationMenu(null)
 
 app.whenReady().then(() => {
   spoofSession(session.defaultSession)

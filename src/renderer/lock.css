@@ -1,0 +1,54 @@
+/* Estilos de la ventana de bloqueo. Los colores se repiten en vez de importar
+   styles.css: esta ventana tiene que poder pintarse aunque el resto falle, y
+   cargar la hoja del shell traería consigo todo su layout. */
+:root {
+  --primary: #7c3aed;
+  --bg: #0f0c1c;
+  --card: rgba(45, 38, 75, 0.6);
+  --borde: rgba(139, 92, 246, 0.3);
+  --texto: #ffffff;
+  --tenue: #cbd5e1;
+  --error: #fca5a5;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  /* Opaco a propósito: es lo único que impide ver las apps de atrás */
+  background: var(--bg);
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(124, 58, 237, 0.18), transparent 55%),
+    radial-gradient(circle at 80% 80%, rgba(14, 165, 233, 0.12), transparent 55%);
+  color: var(--texto);
+  font-family: "Segoe UI", system-ui, sans-serif;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 22px;
+  user-select: none;
+}
+.candado { font-size: 54px; line-height: 1; }
+h1 { font-size: 17px; font-weight: 600; margin: 0; }
+input {
+  background: var(--card);
+  border: 2px solid var(--borde);
+  border-radius: 16px;
+  color: var(--texto);
+  font-size: 32px;
+  padding: 16px;
+  outline: none;
+  text-align: center;
+  width: 260px;
+  letter-spacing: 12px;
+  transition: border-color .25s;
+}
+input:focus { border-color: var(--primary); }
+input:disabled { opacity: .5; }
+.aviso { font-size: 14px; min-height: 20px; color: var(--tenue); }
+.aviso.mal { color: var(--error); }
+.temblor { animation: temblor .4s; }
+@keyframes temblor {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .temblor { animation: none; }
+}
