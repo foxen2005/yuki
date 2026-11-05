@@ -6,6 +6,7 @@ const { openGoogleLogin } = require('./google-auth')
 const { checkNow } = require('./updater')
 const pin = require('./pin')
 const lockWindow = require('./lock-window')
+const { mismoSitio } = require('../shared/dominio')
 
 function registerHandlers({ win, viewManager }) {
 
@@ -59,6 +60,17 @@ function registerHandlers({ win, viewManager }) {
 
   ipcMain.on('open-external', (_, url) => {
     if (typeof url === 'string' && /^https:\/\//.test(url)) shell.openExternal(url)
+  })
+
+  // ¿Destino y página son del mismo sitio? Lo pregunta webview-preload.js para
+  // los enlaces que nunca pasan por setWindowOpenHandler (target="_top", que
+  // navega el marco actual en vez de abrir ventana). Se contesta aquí y no se
+  // calcula allá para que la regla viva en un solo archivo: el preload corre
+  // con sandbox:true y no puede requerir src/shared/dominio.js.
+  // Síncrono porque quien pregunta es un manejador de clic que tiene que
+  // decidir si llamar a preventDefault() antes de que la navegación arranque.
+  ipcMain.on('view:mismo-sitio', (event, destino, pagina) => {
+    event.returnValue = mismoSitio(destino, pagina)
   })
 
   // ── Cachés en disco ───────────────────────────────────────────────────────

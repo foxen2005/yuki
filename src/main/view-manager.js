@@ -5,6 +5,7 @@ const { spoofSession } = require('./session-manager')
 const { bindAppSwitchKeys } = require('./window')
 const permissions = require('./permissions')
 const lockWindow = require('./lock-window')
+const { mismoSitio } = require('../shared/dominio')
 
 // Gmail, Docs y el buscador no enlazan al destino directamente: lo envuelven en
 // su propio redirector (https://www.google.com/url?q=<destino>). Sin deshacer
@@ -58,6 +59,27 @@ function abrirFuera(url) {
   // tienen). Sin él, una promesa rechazada suelta en el proceso principal.
   shell.openExternal(destino).catch(() => {})
   return true
+}
+
+// Una ventana flotante. Las webPreferences tienen que ser las mismas que la
+// vista que la abre: si no coinciden, la página se comporta distinto dentro de
+// la flotante que dentro de la app.
+// show:false porque se decide a mano cuándo asomar (ver _cablearFlotante): con
+// Yuki bloqueado o en la bandeja no debe aparecer, y sin esto parpadeaba antes
+// de esconderse.
+const OPCIONES_FLOTANTE = {
+  width: 1000,
+  height: 800,
+  autoHideMenuBar: true,
+  backgroundColor: '#0f0c1c',
+  show: false,
+  webPreferences: {
+    contextIsolation: false,
+    nodeIntegration: false,
+    sandbox: true,
+    spellcheck: true,
+    preload: path.join(__dirname, '../preload/webview-preload.js'),
+  },
 }
 
 
@@ -246,9 +268,42 @@ class ViewManager {
   _cerrarFlotantes(entry, { forzar = false } = {}) {
     if (!entry || !entry.popups) return
     for (const v of entry.popups) {
-      try { if (!v.isDestroyed()) (forzar ? v.destroy() : v.close()) } catch (e) {}
+      try {
+        if (v.isDestroyed()) continue
+        if (forzar) { v.destroy(); continue }
+        // Marca para el manejador de will-prevent-unload: este cierre no lo
+        // pidió el usuario (es un sueño, un reinicio), así que ahí no se le
+        // pregunta nada. Si la página tiene trabajo sin guardar, el cierre se
+        // queda vetado y la ventana sigue viva — a propósito.
+        //
+        // Es una marca de tiempo y no un booleano porque el beforeunload corre
+        // en la página: si se cuelga y no contesta, el evento no llega nunca y
+        // un booleano se quedaría puesto, dejando el siguiente cierre — el que
+        // sí pide el usuario — vetado en silencio. Así caduca sola.
+        v.__yukiCierreAutoDesde = Date.now()
+        v.close()
+      } catch (e) {}
     }
     if (forzar) entry.popups.clear()
+  }
+
+  // Salida de emergencia desde la bandeja. No intenta adivinar por qué una
+  // flotante se quedó pegada: las mata todas. Es destroy() y no close() a
+  // propósito — si el usuario llega hasta aquí es porque pedirlo por las buenas
+  // ya no funcionó.
+  cerrarTodasLasFlotantes() {
+    for (const entry of this.views.values()) this._cerrarFlotantes(entry, { forzar: true })
+  }
+
+  contarFlotantes() {
+    let n = 0
+    for (const entry of this.views.values()) {
+      if (!entry.popups) continue
+      for (const v of entry.popups) {
+        try { if (!v.isDestroyed()) n++ } catch (e) {}
+      }
+    }
+    return n
   }
 
   // Una flotante es una ventana del sistema: mandar Yuki a la bandeja no se la
@@ -512,44 +567,48 @@ class ViewManager {
 
       }
 
-      // Todo lo demás, ventana flotante con la sesión de la app. Antes se
-      // denegaba y se mandaba al navegador, donde no hay sesión: un adjunto de
-      // Drive enlazado en un correo es drive.google.com visto desde
-      // mail.google.com y terminaba pidiendo iniciar sesión otra vez.
+      // Lo de fuera, al navegador del sistema. Es el defecto desde la 0.4.6:
+      // un enlace a una web ajena no tiene nada que hacer dentro de Yuki, y una
+      // flotante sin barra de direcciones ni botón de atrás es peor sitio para
+      // leerlo que el navegador del usuario. Quien quiera la flotante la pide
+      // por el clic derecho.
+      //
+      // La excepción es el mismo sitio: un adjunto de Drive enlazado en un
+      // correo es drive.google.com visto desde mail.google.com, mismo dominio
+      // registrable. Esos sí se quedan dentro, porque fuera no hay sesión y
+      // terminaban pidiendo iniciar sesión otra vez.
+      //
+      // Hace falta comparar el destino YA desenvuelto: Gmail mete los enlaces
+      // externos en su propio redirector (google.com/url?q=…), así que en crudo
+      // todos parecerían google.com y nada saldría nunca.
+      //
+      // Con una excepción más: 'new-window' es una emergente de verdad, la que
+      // la página pide con window.open(url, '', 'width=…'). Ese tipo de ventana
+      // existe porque la página espera hablar con ella (un checkout, un visor
+      // que avisa al terminar): mandarla al navegador le deja un muñeco en la
+      // mano y la vuelta nunca llega. Un enlace normal llega como
+      // 'foreground-tab' — y es justo el caso que hay que echar fuera.
+      //
+      // Queda un hueco sabido: window.open(url, '_blank') sin medidas también
+      // llega como 'foreground-tab', indistinguible de un clic en un enlace.
+      // Si una página hace eso para un checkout, se irá al navegador. No hay
+      // señal para separarlos, y el defecto que pidió Jean es este.
+      if (disposition !== 'new-window' && !mismoSitio(destino, wc.getURL())) {
+        abrirFuera(destino)
+        return { action: 'deny' }
+      }
+
       destinosPendientes.push({ destino: destino !== openUrl ? destino : null, cuando: Date.now() })
       return {
         action: 'allow',
         outlivesOpener: false,
-        overrideBrowserWindowOptions: {
-          width: 1000,
-          height: 800,
-          autoHideMenuBar: true,
-          backgroundColor: '#0f0c1c',
-          // Se muestra a mano en did-create-window: con Yuki bloqueado o en la
-          // bandeja no debe asomar, y sin esto parpadeaba antes de esconderse.
-          show: false,
-          webPreferences: {
-            // Mismas que la vista que la abre: si no coinciden, la página se
-            // comporta distinto dentro de la flotante que dentro de la app.
-            contextIsolation: false,
-            nodeIntegration: false,
-            sandbox: true,
-            spellcheck: true,
-            preload: path.join(__dirname, '../preload/webview-preload.js'),
-          },
-        },
+        overrideBrowserWindowOptions: OPCIONES_FLOTANTE,
       }
     })
 
-    this._menuContextual(wc)
+    this._menuContextual(wc, { id })
 
-    // Una ventana emergente nace sin nada de lo que la vista tiene: sin esto no
-    // tendría menú contextual, sus enlaces externos no abrirían nada (el
-    // preload manda un IPC que nadie escucha) y seguiría viva aunque la app que
-    // la abrió se duerma o se borre.
     wc.on('did-create-window', (ventana) => {
-      const pwc = ventana.webContents
-
       // Se dispara en el mismo orden en que se autorizaron, así que el primero
       // de la cola es el de esta ventana. Se tiran los rancios: si una
       // autorizada no llegó a crearse, su destino se quedaría ahí y lo cargaría
@@ -563,80 +622,10 @@ class ViewManager {
         // .catch además del try: loadURL devuelve una promesa y rechaza con
         // ERR_ABORTED cuando el destino resulta ser una descarga — justo el
         // caso del adjunto de Drive que motivó todo esto.
-        try { pwc.loadURL(pendiente.destino).catch(() => {}) } catch (e) {}
+        try { ventana.webContents.loadURL(pendiente.destino).catch(() => {}) } catch (e) {}
       }
 
-      this._menuContextual(pwc, { esFlotante: true })
-      // Sin bindAppSwitchKeys a propósito: Ctrl+1..9 dentro de una flotante
-      // cambiaría de app en la ventana principal, que ni siquiera se está
-      // mirando. Aquí esa tecla la usa la página.
-
-      // Sin barra de direcciones, lo único que identifica a la página es un
-      // título que ella misma escribe. Se antepone el dominio real para que un
-      // login que pareceLogin() no haya cazado no pueda hacerse pasar por otro.
-      const ponerTitulo = (titulo) => {
-        let host = ''
-        try { host = new URL(pwc.getURL()).host } catch (e) {}
-        try { ventana.setTitle(host ? `${host} — ${titulo || ''}`.trim() : (titulo || 'Yuki')) } catch (e) {}
-      }
-      pwc.on('page-title-updated', (e, titulo) => { e.preventDefault(); ponerTitulo(titulo) })
-      pwc.on('did-navigate', () => ponerTitulo(pwc.getTitle()))
-
-      // No solo http(s): el preload manda aquí todo lo que Chromium no puede
-      // abrir en una ventana propia, que es justo mailto:, tel: y compañía.
-      pwc.ipc.on('view:open-external', (_, url) => { abrirFuera(url) })
-
-      // Los nietos van al navegador: una cadena de flotantes abriendo flotantes
-      // no la puede seguir nadie.
-      pwc.setWindowOpenHandler(({ url: u, disposition }) => {
-        if (!/^https?:/.test(u)) return { action: 'deny' }
-        if (disposition === 'save-to-disk') pwc.downloadURL(destinoReal(u))
-        else shell.openExternal(destinoReal(u)).catch(() => {})
-        return { action: 'deny' }
-      })
-
-      const entrada = this.views.get(id)
-      if (entrada) {
-        if (!entrada.popups) entrada.popups = new Set()
-        entrada.popups.add(ventana)
-        ventana.on('closed', () => entrada.popups.delete(ventana))
-      }
-
-      // Nace oculta (show:false). Solo se muestra si hay algo a lo que
-      // acompañar: con Yuki bloqueado la taparía la capa, y con Yuki en la
-      // bandeja quedaría suelta en el escritorio con la app "cerrada".
-      // ready-to-show puede no llegar nunca: si la navegación acaba siendo una
-      // descarga, si el renderer se cae antes de pintar o si la carga se
-      // aborta. La ventana se quedaría invisible y viva, y _tieneFlotantes()
-      // dejaría a esa app sin dormirse jamás. El plazo es la red de seguridad.
-      let decidida = false
-      const decidir = () => {
-        if (decidida || ventana.isDestroyed()) return
-        decidida = true
-        if (lockWindow.bloqueado()) { lockWindow.taparNueva(ventana); return }
-        const padreALaVista = this.win && !this.win.isDestroyed() &&
-          this.win.isVisible() && !this.win.isMinimized()
-        // bloqueado(), no estaHabilitado(): lo que importa es si hay una capa
-        // delante ahora mismo. Mirando el interruptor, cualquiera que use PIN
-        // no vería ninguna flotante nunca.
-        if (padreALaVista) ventana.show()
-        // Marcarla como escondida por nosotros: si no, al volver de la bandeja
-        // _verFlotantes la saltaría y se quedaría invisible para siempre.
-        else ventana.__yukiOculta = true
-      }
-      ventana.once('ready-to-show', decidir)
-      const plazo = setTimeout(() => {
-        if (decidida || ventana.isDestroyed()) return
-        let cargada = ''
-        try { cargada = pwc.getURL() } catch (e) {}
-        // Nada cargado tras 15 s: la navegación acabó siendo una descarga o se
-        // abortó, y no va a pintar nunca. Enseñarla dejaría una ventana en
-        // blanco delante del usuario; se cierra. Si llegó a cargar algo, solo
-        // va lenta: se muestra.
-        if (!cargada || cargada === 'about:blank') { try { ventana.close() } catch (e) {} ; return }
-        decidir()
-      }, 15000)
-      ventana.once('closed', () => clearTimeout(plazo))
+      this._cablearFlotante(ventana, id)
     })
 
     // Mensajes desde webview-preload.js
@@ -648,6 +637,191 @@ class ViewManager {
     // propia: mailto:, tel:, un enlace de Teams. Los http(s) no pasan por aquí,
     // los decide setWindowOpenHandler.
     wc.ipc.on('view:open-external', (_, url) => { abrirFuera(url) })
+  }
+
+  // Abrir una URL en una ventana flotante a mano, con la sesión de la app.
+  // Lo pide el usuario por el clic derecho: desde la 0.4.6 el clic normal manda
+  // los enlaces de fuera al navegador, así que este es el camino para quedarse
+  // dentro de Yuki (una página que pide la sesión, un visor que fuera del
+  // navegador con la cuenta puesta no se ve).
+  abrirFlotante(id, url) {
+    const entry = this.views.get(id)
+    if (!entry || entry.sleeping) return
+    const destino = destinoReal(String(url || ''))
+    // Solo http(s): una flotante con un mailto: o un data: no tiene sentido, y
+    // la lista blanca de esquemas vive en abrirFuera para lo demás.
+    if (!/^https?:/i.test(destino)) return
+
+    // La sesión se saca de la propia vista en vez de rearmar la partición: así
+    // no hay dos sitios que tengan que estar de acuerdo en cómo se llama.
+    const ventana = new BrowserWindow({
+      ...OPCIONES_FLOTANTE,
+      webPreferences: { ...OPCIONES_FLOTANTE.webPreferences, session: entry.view.webContents.session },
+    })
+    this._cablearFlotante(ventana, id)
+    try { ventana.webContents.loadURL(destino).catch(() => {}) } catch (e) {}
+  }
+
+  // Una ventana emergente nace sin nada de lo que la vista tiene: sin esto no
+  // tendría menú contextual, sus enlaces externos no abrirían nada (el preload
+  // manda un IPC que nadie escucha) y seguiría viva aunque la app que la abrió
+  // se duerma o se borre.
+  // Lo usan los dos caminos: la que abre la página (did-create-window) y la que
+  // pide el usuario (abrirFlotante).
+  _cablearFlotante(ventana, id) {
+    const pwc = ventana.webContents
+
+    this._menuContextual(pwc, { esFlotante: true })
+    // Sin bindAppSwitchKeys a propósito: Ctrl+1..9 dentro de una flotante
+    // cambiaría de app en la ventana principal, que ni siquiera se está
+    // mirando. Aquí esa tecla la usa la página.
+
+    // Sin barra de direcciones, lo único que identifica a la página es un
+    // título que ella misma escribe. Se antepone el dominio real para que un
+    // login que pareceLogin() no haya cazado no pueda hacerse pasar por otro.
+    const ponerTitulo = (titulo) => {
+      let host = ''
+      try { host = new URL(pwc.getURL()).host } catch (e) {}
+      try { ventana.setTitle(host ? `${host} — ${titulo || ''}`.trim() : (titulo || 'Yuki')) } catch (e) {}
+    }
+    pwc.on('page-title-updated', (e, titulo) => { e.preventDefault(); ponerTitulo(titulo) })
+    pwc.on('did-navigate', () => ponerTitulo(pwc.getTitle()))
+
+    // No solo http(s): el preload manda aquí todo lo que Chromium no puede
+    // abrir en una ventana propia, que es justo mailto:, tel: y compañía.
+    pwc.ipc.on('view:open-external', (_, url) => { abrirFuera(url) })
+
+    // Los nietos van al navegador: una cadena de flotantes abriendo flotantes
+    // no la puede seguir nadie.
+    pwc.setWindowOpenHandler(({ url: u, disposition }) => {
+      if (!/^https?:/.test(u)) return { action: 'deny' }
+      if (disposition === 'save-to-disk') pwc.downloadURL(destinoReal(u))
+      else shell.openExternal(destinoReal(u)).catch(() => {})
+      return { action: 'deny' }
+    })
+
+    const entrada = this.views.get(id)
+    if (entrada) {
+      if (!entrada.popups) entrada.popups = new Set()
+      entrada.popups.add(ventana)
+      ventana.on('closed', () => entrada.popups.delete(ventana))
+    }
+
+    // La ventana pegada que no se cierra ni con la X.
+    //
+    // Electron NO pinta ningún aviso por su cuenta cuando la página tiene un
+    // beforeunload: el cierre se veta en silencio y la ventana se queda ahí,
+    // sin decir por qué. Quien tiene que preguntar es la aplicación, en
+    // will-prevent-unload, y preventDefault() significa "ciérrala igual".
+    pwc.on('will-prevent-unload', (e) => {
+      // Cierre automático (sueño, reinicio de la app): no lo pidió el usuario,
+      // así que no se le pregunta y el veto se respeta.
+      const auto = ventana.__yukiCierreAutoDesde
+      if (auto && Date.now() - auto < 5000) return
+      // El diálogo cuelga de la ventana solo si se puede ver; si está
+      // escondida (Yuki en la bandeja) quedaría invisible y nadie podría
+      // contestarlo: ese era el cuelgue de antes.
+      const duena = (!ventana.isDestroyed() && ventana.isVisible() && !ventana.isMinimized()) ? ventana : null
+      let elegido = 1
+      try {
+        // Esto salta tanto al cerrar como al navegar o recargar, así que el
+        // texto no habla de cerrar: habla de perder los cambios.
+        elegido = dialog.showMessageBoxSync(duena, {
+          type: 'question', noLink: true, title: 'Yuki',
+          message: 'Esta página tiene cambios sin guardar',
+          detail: 'Si continúas vas a perderlos.',
+          buttons: ['Continuar y perderlos', 'Quedarme aquí'],
+          defaultId: 1, cancelId: 1,
+        })
+      } catch (err) {
+        // Sin diálogo no hay forma de preguntar; mejor no perder nada.
+        return
+      }
+      // preventDefault() aquí significa "ignora el beforeunload y sigue".
+      if (elegido === 0) e.preventDefault()
+    })
+
+    // Una página colgada tampoco contesta al beforeunload, y ahí no hay veto
+    // que levantar: el proceso no responde. Se pregunta, como hace Chrome, y se
+    // mata sin pedirle permiso a la página.
+    let preguntando = false
+    ventana.on('unresponsive', async () => {
+      if (preguntando || ventana.isDestroyed()) return
+      // Si no se ve (Yuki en la bandeja, o minimizada) no se hace nada: no hay
+      // dónde pintar la pregunta, y matarla por su cuenta tiraría a la basura
+      // lo que el usuario tuviera a medias sin haberle avisado. Para ese caso
+      // está "Cerrar ventanas flotantes" en la bandeja.
+      if (!ventana.isVisible() || ventana.isMinimized()) return
+      preguntando = true
+      try {
+        // Asíncrono: el síncrono congela el proceso principal entero, o sea
+        // Yuki completo, mientras el usuario decide.
+        const { response } = await dialog.showMessageBox(ventana, {
+          type: 'warning', noLink: true, title: 'Yuki',
+          message: 'Esta ventana no responde',
+          detail: 'Puedes esperar a que la página reaccione o cerrarla a la fuerza. Si la cierras, perderás lo que no esté guardado.',
+          buttons: ['Esperar', 'Cerrar la ventana'],
+          defaultId: 0, cancelId: 0,
+        })
+        if (response === 1 && !ventana.isDestroyed()) ventana.destroy()
+      } catch (e) {}
+      preguntando = false
+    })
+
+    // Nace oculta (show:false). Solo se muestra si hay algo a lo que
+    // acompañar: con Yuki bloqueado la taparía la capa, y con Yuki en la
+    // bandeja quedaría suelta en el escritorio con la app "cerrada".
+    // ready-to-show puede no llegar nunca: si la navegación acaba siendo una
+    // descarga, si el renderer se cae antes de pintar o si la carga se
+    // aborta. La ventana se quedaría invisible y viva, y _tieneFlotantes()
+    // dejaría a esa app sin dormirse jamás. El plazo es la red de seguridad.
+    let decidida = false
+    const decidir = () => {
+      if (decidida || ventana.isDestroyed()) return
+      decidida = true
+      if (lockWindow.bloqueado()) { lockWindow.taparNueva(ventana); return }
+      const padreALaVista = this.win && !this.win.isDestroyed() &&
+        this.win.isVisible() && !this.win.isMinimized()
+      // bloqueado(), no estaHabilitado(): lo que importa es si hay una capa
+      // delante ahora mismo. Mirando el interruptor, cualquiera que use PIN
+      // no vería ninguna flotante nunca.
+      if (padreALaVista) ventana.show()
+      // Marcarla como escondida por nosotros: si no, al volver de la bandeja
+      // _verFlotantes la saltaría y se quedaría invisible para siempre.
+      else ventana.__yukiOculta = true
+    }
+    ventana.once('ready-to-show', decidir)
+
+    // Tres situaciones distintas detrás de "no ha pintado todavía", y no se
+    // tratan igual:
+    //
+    // - Nada cargado: la navegación resultó ser una descarga (el adjunto de
+    //   Drive) o se abortó. No va a pintar nunca; enseñarla deja el rectángulo
+    //   pegado del que no se sale. Se descarta.
+    // - Todavía cargando: solo va lenta. Se le da más tiempo, hasta 45 s —
+    //   antes aquí se descartaba, y una flotante que el usuario había pedido a
+    //   mano desaparecía sin decir nada por culpa de una red mala.
+    // - Cargada del todo pero sin ready-to-show: pasa, y la página está ahí.
+    //   Se enseña. Si además estuviera colgada ya hay salida: el aviso de
+    //   "esta ventana no responde" y el item de la bandeja.
+    //
+    // Sin reenviar nada al navegador: en el caso de la descarga volvería a
+    // dispararla, y si el usuario pidió la flotante por el clic derecho,
+    // sacarla fuera es lo contrario de lo que pidió.
+    let plazo = null
+    let intentos = 0
+    const revisar = () => {
+      if (decidida || ventana.isDestroyed()) return
+      let cargada = ''
+      let cargando = false
+      try { cargada = pwc.getURL(); cargando = pwc.isLoading() } catch (e) {}
+      if (cargando && ++intentos < 3) { plazo = setTimeout(revisar, 15000); return }
+      if (!cargada || cargada === 'about:blank') { try { ventana.destroy() } catch (e) {} ; return }
+      if (cargando) { try { ventana.destroy() } catch (e) {} ; return }
+      decidir()
+    }
+    plazo = setTimeout(revisar, 15000)
+    ventana.once('closed', () => clearTimeout(plazo))
   }
 
   // El menú nativo se sustituye por uno propio, así que todo lo que falte aquí
@@ -719,7 +893,7 @@ class ViewManager {
   // es una heurística y alguna vez dejará un login dentro de una flotante donde
   // no pueda terminar. Con esto el usuario se lo lleva al navegador en vez de
   // quedarse atascado.
-  _menuContextual(wc, { esFlotante = false } = {}) {
+  _menuContextual(wc, { esFlotante = false, id = null } = {}) {
     wc.on('context-menu', (_, params) => {
       const { selectionText, isEditable, editFlags, misspelledWord, dictionarySuggestions } = params
       const items = []
@@ -758,6 +932,13 @@ class ViewManager {
       // Enlaces: el destino real, deshaciendo el redirector de Google
       if (params.linkURL && /^https?:/.test(params.linkURL)) {
         const destino = destinoReal(params.linkURL)
+        // El clic normal manda los enlaces de fuera al navegador. Esta es la
+        // vía para lo contrario: quedarse dentro, con la sesión de la app.
+        // Solo en una vista (id): dentro de una flotante los nietos van al
+        // navegador a propósito, y ofrecerlo aquí prometería algo que no pasa.
+        if (id) {
+          items.push({ label: 'Abrir en una ventana de Yuki', click: () => this.abrirFlotante(id, destino) })
+        }
         items.push(
           { label: 'Abrir enlace en el navegador', click: () => { shell.openExternal(destino).catch(() => {}) } },
           { label: 'Copiar dirección del enlace',  click: () => clipboard.writeText(destino) },

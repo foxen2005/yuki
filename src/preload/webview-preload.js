@@ -202,10 +202,6 @@ try {
   // página podría disparar sin que el usuario haya pulsado nada.
   const ESQUEMAS_AL_SISTEMA = /^(mailto|tel|callto|sms|webcal):/i
 
-  // Sufijos de segundo nivel: sin esto, foo.co.uk y bar.co.uk comparten "co.uk"
-  // y se tomarían por el mismo sitio.
-  const SUFIJOS_2N = new Set(['co', 'com', 'net', 'org', 'gov', 'edu', 'ac', 'gob'])
-
   // Resuelve relativas contra la página: '/login' también es http
   function esHttp(url) {
     try { return /^https?:$/i.test(new URL(String(url), location.href).protocol) }
@@ -216,21 +212,25 @@ try {
     try { return new URL(String(url), location.href).href } catch (e) { return String(url) }
   }
 
-  function dominioBase(host) {
-    const partes = String(host || '').toLowerCase().split('.')
-    if (partes.length < 2) return partes.join('.')
-    const n = (partes.length > 2 && SUFIJOS_2N.has(partes[partes.length - 2])) ? 3 : 2
-    return partes.slice(-n).join('.')
-  }
-
-  // Compara el dominio registrable, no el origen. Con el origen, el enlace de
-  // cerrar sesión de Gmail (accounts.google.com desde mail.google.com) contaba
-  // como externo y se iba al navegador: cerraba la sesión del Chrome del
-  // usuario y dejaba la de Yuki intacta.
+  // La regla de "mismo sitio" la contesta el proceso principal
+  // (src/shared/dominio.js). Aquí había una copia, y en cuanto la de allá
+  // aprendió a distinguir inquilinos (contoso.sharepoint.com) y a reconocer
+  // servicios repartidos entre dominios (Teams → SharePoint), las dos dejaron
+  // de decir lo mismo: un enlace podía salir al navegador por un lado y
+  // quedarse dentro por el otro. No se puede requerir el módulo desde aquí
+  // (sandbox:true), así que se pregunta.
+  //
+  // No es el origen: con el origen, el enlace de cerrar sesión de Gmail
+  // (accounts.google.com desde mail.google.com) contaba como externo y se iba
+  // al navegador — cerraba la sesión del Chrome del usuario y dejaba la de Yuki
+  // intacta.
   function esDeOtroSitio(url) {
     try {
-      return dominioBase(new URL(String(url), location.href).hostname) !== dominioBase(location.hostname)
-    } catch (e) { return false }
+      return !ipcRenderer.sendSync('view:mismo-sitio', absoluta(url), location.href)
+    } catch (e) {
+      // Sin respuesta, tratarlo como ajeno: el navegador es el destino inocuo.
+      return true
+    }
   }
 
   // Ventana de mentira. Si window.open devuelve null, algunas apps
