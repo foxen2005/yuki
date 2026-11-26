@@ -1,0 +1,22 @@
+{
+  "_comentario": [
+    "Avisos que Yuki muestra como banner. Publicar uno = agregarlo aquí y hacer commit;",
+    "retirarlo = borrarlo de la lista. Los Yuki instalados lo leen cada 6 horas desde",
+    "https://raw.githubusercontent.com/foxen2005/yuki/master/avisos.json",
+    "",
+    "Reglas que impone la app (src/main/avisos.js), no se pueden saltar desde aquí:",
+    "  - Solo texto. Nada de HTML, imágenes ni scripts: el banner se pinta con textContent.",
+    "  - 'enlace' tiene que ser https. Cualquier otra cosa se descarta y el botón no sale.",
+    "  - Se muestra uno a la vez, el último de la lista que esté vigente.",
+    "  - 'id' es lo que se recuerda al cerrarlo. NUNCA reciclar un id: cambiarle el texto",
+    "    a uno ya cerrado no lo resucita, y así debe ser.",
+    "  - 'hasta' hace que caduque solo, aunque nadie lo haya visto.",
+    "  - Nada se muestra en las primeras 24 h desde la instalación.",
+    "  - El usuario lo puede apagar entero en Configuración.",
+    "",
+    "Campos: id (obligatorio), desde, hasta, versionMinima, versionMaxima,",
+    "        titulo, texto, boton, enlace. Los textos pueden ser una cadena o un",
+    "        objeto por idioma: { es, en, pt-BR, fr }."
+  ],
+  "avisos": []
+}

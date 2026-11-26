@@ -5,6 +5,7 @@ const ViewManager = require('./view-manager')
 const { registerHandlers } = require('./ipc-handlers')
 const { setupAutosave } = require('./autosave')
 const { setupUpdater } = require('./updater')
+const avisos = require('./avisos')
 
 // ── Instancia única ────────────────────────────────────────────────────────
 const gotLock = app.requestSingleInstanceLock()
@@ -52,6 +53,10 @@ app.whenReady().then(() => {
   registerHandlers({ win, viewManager })
   setupAutosave({ win, viewManager })
   setupUpdater(getWin)
+  // Mira si hay algún aviso que mostrar. No consulta nada en este momento:
+  // espera un minuto, porque ahora mismo la app está abriendo las vistas y
+  // pidiendo la actualización, y esto no tiene ninguna prisa.
+  avisos.arrancar()
 
   // Flush periódico de sesiones cada 60s — protege contra apagados bruscos.
   // Antes se preguntaba la lista de apps al renderer con executeJavaScript en

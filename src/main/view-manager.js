@@ -6,6 +6,8 @@ const { bindAppSwitchKeys } = require('./window')
 const permissions = require('./permissions')
 const lockWindow = require('./lock-window')
 const { mismoSitio } = require('../shared/dominio')
+const idioma = require('./idioma')
+const { t } = idioma
 
 // Gmail, Docs y el buscador no enlazan al destino directamente: lo envuelven en
 // su propio redirector (https://www.google.com/url?q=<destino>). Sin deshacer
@@ -83,6 +85,34 @@ const OPCIONES_FLOTANTE = {
 }
 
 
+// Corrector ortográfico. Antes era fijo en español + inglés, así que con la app
+// en francés o en portugués todas las palabras salían subrayadas y el menú
+// contextual solo ofrecía sugerencias en español.
+//
+// Siempre se añade el inglés: medio mundo escribe correos mezclando su idioma
+// con términos en inglés, y tenerlo puesto cuesta poco.
+// Los códigos van por candidatos y se filtran por lo que Chromium tenga: no
+// existe es-CL, y es-419 (Latinoamérica) es el más cercano al español de aquí.
+const CANDIDATOS_CORRECTOR = {
+  'es':    ['es-419', 'es', 'es-ES'],
+  'en':    ['en-US', 'en-GB', 'en'],
+  'pt-BR': ['pt-BR', 'pt'],
+  'fr':    ['fr', 'fr-FR'],
+}
+
+function aplicarCorrector(ses) {
+  try {
+    const avail = ses.availableSpellCheckerLanguages || []
+    const cod = idioma.idioma()
+    const propio = (CANDIDATOS_CORRECTOR[cod] || []).find(l => avail.includes(l))
+    const ingles = CANDIDATOS_CORRECTOR['en'].find(l => avail.includes(l))
+    // Set para no repetir el inglés cuando ya es el idioma de la interfaz.
+    const langs = [...new Set([propio, ingles].filter(Boolean))]
+    if (langs.length) ses.setSpellCheckerLanguages(langs)
+  } catch (e) {}
+}
+
+
 class ViewManager {
   constructor(win) {
     this.win = win
@@ -141,15 +171,7 @@ class ViewManager {
     // Cámara/micrófono/ubicación se preguntan una vez por sitio (ver permissions.js)
     permissions.attach(ses, this.win)
 
-    // Corrector ortográfico: español + inglés. Sin esto Electron usa solo el
-    // idioma del sistema y las sugerencias no aparecen para el otro idioma.
-    try {
-      // No existe es-CL en Chromium; es-419 (Latinoamérica) es el más cercano
-      const avail = ses.availableSpellCheckerLanguages
-      const es = ['es-419', 'es', 'es-ES'].find(l => avail.includes(l))
-      const langs = [es, 'en-US'].filter(l => l && avail.includes(l))
-      if (langs.length) ses.setSpellCheckerLanguages(langs)
-    } catch (e) {}
+    aplicarCorrector(ses)
 
     const view = new WebContentsView({
       webPreferences: {
@@ -342,6 +364,14 @@ class ViewManager {
     const alaVista = this.win && !this.win.isDestroyed() &&
       this.win.isVisible() && !this.win.isMinimized()
     if (alaVista) this._verFlotantes(true)
+  }
+
+  // Al cambiar el idioma de la interfaz, las vistas ya creadas conservan el
+  // corrector con el que nacieron. Esto lo reaplica a todas.
+  actualizarCorrector() {
+    for (const entry of this.views.values()) {
+      try { aplicarCorrector(entry.view.webContents.session) } catch (e) {}
+    }
   }
 
   _tieneFlotantes(entry) {
@@ -728,9 +758,9 @@ class ViewManager {
         // texto no habla de cerrar: habla de perder los cambios.
         elegido = dialog.showMessageBoxSync(duena, {
           type: 'question', noLink: true, title: 'Yuki',
-          message: 'Esta página tiene cambios sin guardar',
-          detail: 'Si continúas vas a perderlos.',
-          buttons: ['Continuar y perderlos', 'Quedarme aquí'],
+          message: t('dialog.sinGuardar.titulo'),
+          detail: t('dialog.sinGuardar.detalle'),
+          buttons: [t('dialog.sinGuardar.continuar'), t('dialog.sinGuardar.quedarme')],
           defaultId: 1, cancelId: 1,
         })
       } catch (err) {
@@ -758,9 +788,9 @@ class ViewManager {
         // Yuki completo, mientras el usuario decide.
         const { response } = await dialog.showMessageBox(ventana, {
           type: 'warning', noLink: true, title: 'Yuki',
-          message: 'Esta ventana no responde',
-          detail: 'Puedes esperar a que la página reaccione o cerrarla a la fuerza. Si la cierras, perderás lo que no esté guardado.',
-          buttons: ['Esperar', 'Cerrar la ventana'],
+          message: t('dialog.noResponde.titulo'),
+          detail: t('dialog.noResponde.detalle'),
+          buttons: [t('dialog.noResponde.esperar'), t('dialog.noResponde.cerrar')],
           defaultId: 0, cancelId: 0,
         })
         if (response === 1 && !ventana.isDestroyed()) ventana.destroy()
@@ -872,7 +902,7 @@ class ViewManager {
       const duena = BrowserWindow.fromWebContents(wc) || this.win
       const { canceled, filePath } = await dialog.showSaveDialog(duena, {
         defaultPath: `imagen-${Date.now()}.${ext}`,
-        filters: [{ name: 'Imagen', extensions: [ext] }],
+        filters: [{ name: t('dialog.imagenFiltro'), extensions: [ext] }],
       })
       if (canceled || !filePath) return
       fs.writeFileSync(filePath, datos)
@@ -882,7 +912,7 @@ class ViewManager {
       try {
         dialog.showMessageBox(duena, {
           type: 'warning', title: 'Yuki', noLink: true,
-          message: 'No se pudo guardar la imagen',
+          message: t('dialog.imagenNoGuardada'),
           detail: String((e && e.message) || e),
         })
       } catch (e2) {}
@@ -904,10 +934,10 @@ class ViewManager {
         if (sugg.length) {
           sugg.forEach(word => items.push({ label: word, click: () => wc.replaceMisspelling(word) }))
         } else {
-          items.push({ label: 'Sin sugerencias', enabled: false })
+          items.push({ label: t('menu.sinSugerencias'), enabled: false })
         }
         items.push({
-          label: `Agregar "${misspelledWord}" al diccionario`,
+          label: t('menu.agregarDiccionario', { palabra: misspelledWord }),
           click: () => wc.session.addWordToSpellCheckerDictionary(misspelledWord),
         })
         items.push({ type: 'separator' })
@@ -916,14 +946,14 @@ class ViewManager {
       // que el clic derecho sobre una foto de WhatsApp no ofrecía nada.
       if (params.mediaType === 'image' && params.srcURL) {
         items.push(
-          { label: 'Guardar imagen como…', click: () => this._guardarImagen(wc, params.srcURL, params.frame) },
-          { label: 'Copiar imagen',        click: () => wc.copyImageAt(params.x, params.y) },
+          { label: t('menu.guardarImagen'), click: () => this._guardarImagen(wc, params.srcURL, params.frame) },
+          { label: t('menu.copiarImagen'),  click: () => wc.copyImageAt(params.x, params.y) },
         )
         // Una dirección blob: o data: no sirve fuera de la página que la creó
         if (/^https?:/.test(params.srcURL)) {
           items.push(
-            { label: 'Copiar dirección de la imagen', click: () => clipboard.writeText(params.srcURL) },
-            { label: 'Abrir imagen en el navegador',  click: () => { shell.openExternal(params.srcURL).catch(() => {}) } },
+            { label: t('menu.copiarDireccionImagen'), click: () => clipboard.writeText(params.srcURL) },
+            { label: t('menu.abrirImagenNavegador'),  click: () => { shell.openExternal(params.srcURL).catch(() => {}) } },
           )
         }
         items.push({ type: 'separator' })
@@ -937,28 +967,28 @@ class ViewManager {
         // Solo en una vista (id): dentro de una flotante los nietos van al
         // navegador a propósito, y ofrecerlo aquí prometería algo que no pasa.
         if (id) {
-          items.push({ label: 'Abrir en una ventana de Yuki', click: () => this.abrirFlotante(id, destino) })
+          items.push({ label: t('menu.abrirEnVentanaYuki'), click: () => this.abrirFlotante(id, destino) })
         }
         items.push(
-          { label: 'Abrir enlace en el navegador', click: () => { shell.openExternal(destino).catch(() => {}) } },
-          { label: 'Copiar dirección del enlace',  click: () => clipboard.writeText(destino) },
+          { label: t('menu.abrirEnlaceNavegador'), click: () => { shell.openExternal(destino).catch(() => {}) } },
+          { label: t('menu.copiarEnlace'),         click: () => clipboard.writeText(destino) },
           { type: 'separator' },
         )
       }
 
       if (isEditable) {
-        if (editFlags.canCut && selectionText)  items.push({ role: 'cut',       label: 'Cortar' })
-        if (editFlags.canCopy && selectionText) items.push({ role: 'copy',      label: 'Copiar' })
-        if (editFlags.canPaste)                 items.push({ role: 'paste',     label: 'Pegar' })
-        if (editFlags.canSelectAll)             items.push({ type: 'separator' }, { role: 'selectAll', label: 'Seleccionar todo' })
+        if (editFlags.canCut && selectionText)  items.push({ role: 'cut',       label: t('menu.cortar') })
+        if (editFlags.canCopy && selectionText) items.push({ role: 'copy',      label: t('menu.copiar') })
+        if (editFlags.canPaste)                 items.push({ role: 'paste',     label: t('menu.pegar') })
+        if (editFlags.canSelectAll)             items.push({ type: 'separator' }, { role: 'selectAll', label: t('menu.seleccionarTodo') })
       } else if (selectionText && selectionText.trim()) {
-        items.push({ role: 'copy', label: 'Copiar' })
+        items.push({ role: 'copy', label: t('menu.copiar') })
       }
 
       if (esFlotante) {
         if (items.length) items.push({ type: 'separator' })
         items.push({
-          label: 'Abrir esta página en el navegador',
+          label: t('menu.abrirEstaPaginaNavegador'),
           click: () => {
             const aqui = wc.getURL()
             if (abrirFuera(aqui)) {
@@ -972,7 +1002,7 @@ class ViewManager {
       // Siempre algo que ofrecer: antes, el clic derecho sobre una zona sin
       // texto ni campo editable no abría ningún menú.
       if (!items.length) {
-        items.push({ label: 'Recargar', click: () => wc.reload() })
+        items.push({ label: t('menu.recargar'), click: () => wc.reload() })
       }
 
       // Un separador final suelto queda feo

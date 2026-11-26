@@ -6,12 +6,13 @@
   "scripts": {
     "start": "set ELECTRON_RUN_AS_NODE=&&electron .",
     "start:dev": "set ELECTRON_RUN_AS_NODE=&&electron . --inspect=9229",
-    "build": "electron-builder build --win",
+    "build": "node scripts/check-i18n.js && electron-builder build --win",
     "build:dir": "electron-builder build --win --dir",
-    "release": "electron-builder build --win --publish always",
-    "build:store": "electron-builder build --win appx",
+    "release": "node scripts/check-i18n.js && electron-builder build --win --publish always",
+    "build:store": "node scripts/check-i18n.js && electron-builder build --win appx",
     "assets:appx": "electron scripts/make-appx-assets.js",
-    "assets:ico": "node scripts/make-ico.js"
+    "assets:ico": "node scripts/make-ico.js",
+    "check:i18n": "node scripts/check-i18n.js"
   },
   "build": {
     "appId": "com.yuki.app",

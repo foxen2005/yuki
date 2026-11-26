@@ -518,6 +518,10 @@ body {
   top: 5px; bottom: auto;
   transform: translateX(-50%) translateY(-10px);
   padding: 6px 16px; font-size: 12px; border-radius: 15px;
+  /* Por encima del aviso de Digital Fox (2500), que comparte esta franja y se
+     queda ahí hasta que lo cierran: si no, ningún toast se vería mientras haya
+     un aviso puesto. Es pasajero y no roba el clic (pointer-events:none). */
+  z-index: 2600;
 }
 #toast.show { transform: translateX(-50%) translateY(0); }
 
@@ -539,8 +543,11 @@ body {
 
 /* Toast de actualización: elemento propio, se queda hasta que el usuario decide.
    Va a la derecha de la franja superior para no chocar con #toast (centrado). */
+/* z-index por encima del aviso de Digital Fox (2500): el aviso se queda hasta
+   que lo cierran, y si tapara esto el botón "Reiniciar ahora" de una
+   actualización sería invisible e imposible de pulsar. */
 #toast-update {
-  position: fixed; top: 5px; right: 160px; z-index: 2000;
+  position: fixed; top: 5px; right: 160px; z-index: 2600;
   background: var(--primary); color: white; padding: 6px 16px; border-radius: 15px;
   font-size: 12px; font-weight: 600; opacity: 0; transform: translateY(-10px);
   transition: var(--transition); pointer-events: none;
@@ -550,6 +557,47 @@ body {
   margin-left: 8px; background: white; color: var(--primary); border: none;
   border-radius: 10px; padding: 3px 10px; font-weight: 700; font-size: 12px; cursor: pointer;
 }
+
+/* ── Aviso de Digital Fox ──
+   En la franja de 40px de arriba, igual que el banner de Google y por el mismo
+   motivo: las apps son WebContentsView nativas que Chromium pinta ENCIMA de
+   todo el DOM, desde y=40 hasta abajo. Cualquier cosa que se ponga más abajo
+   queda tapada y no recibe ni un clic — el primer intento de este banner lo
+   puso en bottom:16px y simplemente no existía con una app abierta.
+   Por eso también va en una sola línea: en 40px no cabe otra cosa.
+
+   Si el banner de Google aparece a la vez, gana él (z-index 3000): está
+   interrumpiendo algo que el usuario intenta hacer ahora, y esto es una
+   novedad nuestra que puede esperar. */
+#aviso-banner {
+  position: fixed; top: 0; left: 72px; right: 160px; height: 40px;
+  z-index: 2500; -webkit-app-region: no-drag;
+}
+#aviso-banner-inner {
+  height: 100%; display: flex; align-items: center; gap: 10px; padding: 0 12px;
+  background: var(--bg-card); border-bottom: 1px solid var(--border-color);
+}
+#aviso-titulo {
+  font-size: 13px; font-weight: 600; color: var(--text-main);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* El texto va a continuación del título, en la misma línea, y es lo primero
+   que se recorta cuando no cabe. El recorte duro está además en
+   src/main/avisos.js: esto viene de internet. */
+#aviso-texto {
+  font-size: 11px; color: var(--text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#aviso-banner-inner > div {
+  display: flex; align-items: baseline; gap: 8px; min-width: 0;
+}
+#aviso-accion {
+  flex-shrink: 0; background: var(--primary); color: white; border: none;
+  border-radius: var(--radius-sm); padding: 5px 12px; font-size: 12px;
+  font-weight: 600; cursor: pointer; max-width: 160px; overflow: hidden;
+  white-space: nowrap; text-overflow: ellipsis;
+}
+#aviso-accion:hover { background: var(--primary-hover); }
 
 /* ── Editor de permisos de sitios ── */
 .perm-empty { font-size: 11px; color: var(--text-muted); padding: 4px 0; }

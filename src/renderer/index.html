@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- lang se corrige en renderer.js al aplicar el idioma: aquí no se sabe cuál es -->
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -20,7 +21,7 @@
     <div id="apps-list"></div>
     <div id="sidebar-bottom">
       <div class="divider"></div>
-      <button class="app-btn settings-btn" id="settings-toggle" title="Configuracion" aria-label="Configuración"><i data-lucide="settings" class="icon-lucide"></i></button>
+      <button class="app-btn settings-btn" id="settings-toggle" data-i18n-title="sidebar.configuracion" data-i18n-aria="sidebar.configuracion" title="Configuración" aria-label="Configuración"><i data-lucide="settings" class="icon-lucide"></i></button>
     </div>
   </div>
 
@@ -28,7 +29,7 @@
   <div id="content">
     <div class="loading-overlay" id="loading-overlay">
       <div class="spinner"></div>
-      <div class="loading-label" id="loading-label">Cargando...</div>
+      <div class="loading-label" id="loading-label" data-i18n="content.cargando">Cargando...</div>
     </div>
     <!-- Capa 1: blur + dim (SIN el logo adentro) -->
     <div id="settings-content-overlay">
@@ -40,7 +41,7 @@
       <img src="../../icons/icon.png" alt="Yuki" id="settings-overlay-logo" />
       <div id="settings-overlay-fallback" style="display:none;font-size:64px">🌸</div>
       <div id="settings-overlay-name">Yuki</div>
-      <div id="settings-overlay-hint">Configura tus apps</div>
+      <div id="settings-overlay-hint" data-i18n="overlay.hint">Configura tus apps</div>
     </div>
   </div>
 
@@ -60,26 +61,40 @@
 
       <div class="panel-header">
         <span style="font-size:20px"><i data-lucide="settings" class="icon-lucide"></i></span>
-        <h2>Configuracion de Apps</h2>
+        <h2 data-i18n="panel.titulo">Configuración de Apps</h2>
         <div class="panel-header-actions">
-          <button id="btn-hide-window" class="icon-btn" title="Minimizar a la bandeja" aria-label="Minimizar"><i data-lucide="minus" class="icon-lucide"></i></button>
-          <button id="btn-quit-app" class="icon-btn danger" title="Cerrar y salir" aria-label="Cerrar y salir"><i data-lucide="power" class="icon-lucide"></i></button>
+          <button id="btn-hide-window" class="icon-btn" data-i18n-title="panel.minimizar" data-i18n-aria="panel.minimizar" title="Minimizar a la bandeja" aria-label="Minimizar a la bandeja"><i data-lucide="minus" class="icon-lucide"></i></button>
+          <button id="btn-quit-app" class="icon-btn danger" data-i18n-title="panel.salir" data-i18n-aria="panel.salir" title="Cerrar y salir" aria-label="Cerrar y salir"><i data-lucide="power" class="icon-lucide"></i></button>
           <div class="panel-header-sep"></div>
-          <button id="settings-close-btn" class="icon-btn" title="Cerrar panel" aria-label="Cerrar"><i data-lucide="x" class="icon-lucide"></i></button>
+          <button id="settings-close-btn" class="icon-btn" data-i18n-title="panel.cerrar" data-i18n-aria="panel.cerrar" title="Cerrar panel" aria-label="Cerrar panel"><i data-lucide="x" class="icon-lucide"></i></button>
         </div>
       </div>
 
       <div class="panel-body">
 
         <!-- Ajustes generales -->
-        <div class="section-title">Ajustes</div>
+        <div class="section-title" data-i18n="sec.ajustes">Ajustes</div>
         <div class="settings-card">
+          <div class="settings-row">
+            <div class="settings-label">
+              <span class="settings-icon">🌐</span>
+              <div>
+                <div class="settings-name" data-i18n="ajustes.idioma.nombre">Idioma</div>
+                <div class="settings-desc" data-i18n="ajustes.idioma.desc">Se aplica al momento, sin reiniciar</div>
+              </div>
+            </div>
+            <div class="settings-control">
+              <!-- Las opciones las pone renderer.js desde la lista de idiomas:
+                   cada una va escrita en su propio idioma. -->
+              <select id="lang-select"></select>
+            </div>
+          </div>
           <div class="settings-row">
             <div class="settings-label">
               <span class="settings-icon">🔔</span>
               <div>
-                <div class="settings-name">Volumen notificaciones</div>
-                <div class="settings-desc">Sonido al recibir mensajes</div>
+                <div class="settings-name" data-i18n="ajustes.volumen.nombre">Volumen notificaciones</div>
+                <div class="settings-desc" data-i18n="ajustes.volumen.desc">Sonido al recibir mensajes</div>
               </div>
             </div>
             <div class="settings-control">
@@ -91,20 +106,21 @@
             <div class="settings-label">
               <span class="settings-icon">🎵</span>
               <div>
-                <div class="settings-name">Sonido de notificación</div>
-                <div class="settings-desc">Elige el tono o sube tu propio archivo</div>
+                <div class="settings-name" data-i18n="ajustes.sonido.nombre">Sonido de notificación</div>
+                <div class="settings-desc" data-i18n="ajustes.sonido.desc">Elige el tono o sube tu propio archivo</div>
               </div>
             </div>
             <div class="settings-control" style="flex-direction:column;align-items:flex-end;gap:6px">
               <select id="sound-select">
-                <option value="default">Por defecto</option>
-                <option value="suave">Suave</option>
-                <option value="campana">Campana</option>
-                <option value="alerta">Alerta</option>
-                <option value="custom">Personalizado…</option>
+                <option value="default" data-i18n="ajustes.sonido.porDefecto">Por defecto</option>
+                <option value="suave" data-i18n="ajustes.sonido.suave">Suave</option>
+                <option value="campana" data-i18n="ajustes.sonido.campana">Campana</option>
+                <option value="alerta" data-i18n="ajustes.sonido.alerta">Alerta</option>
+                <option value="custom" data-i18n="ajustes.sonido.personalizado">Personalizado…</option>
               </select>
               <div id="sound-file-row" style="display:none;align-items:center;gap:6px">
-                <button id="btn-sound-file">📂 Elegir archivo</button>
+                <button id="btn-sound-file" data-i18n="ajustes.sonido.elegirArchivo">📂 Elegir archivo</button>
+                <!-- Sin data-i18n: es estado (hay archivo o no), lo pone renderer.js -->
                 <span id="sound-file-name">Sin archivo</span>
               </div>
             </div>
@@ -113,8 +129,8 @@
             <div class="settings-label">
               <span class="settings-icon">🔕</span>
               <div>
-                <div class="settings-name">No molestar</div>
-                <div class="settings-desc">Silencia todos los sonidos</div>
+                <div class="settings-name" data-i18n="ajustes.dnd.nombre">No molestar</div>
+                <div class="settings-desc" data-i18n="ajustes.dnd.desc">Silencia todos los sonidos</div>
               </div>
             </div>
             <div class="settings-control">
@@ -124,17 +140,32 @@
               </label>
             </div>
           </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              <span class="settings-icon">📣</span>
+              <div>
+                <div class="settings-name" data-i18n="ajustes.avisos.nombre">Avisos de Digital Fox</div>
+                <div class="settings-desc" data-i18n="ajustes.avisos.desc">Novedades de Yuki, como mucho una cada tanto</div>
+              </div>
+            </div>
+            <div class="settings-control">
+              <label class="toggle">
+                <input type="checkbox" id="avisos-toggle" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
         </div>
 
         <!-- Seguridad -->
-        <div class="section-title" style="margin-top:16px">Seguridad</div>
+        <div class="section-title" style="margin-top:16px" data-i18n="sec.seguridad">Seguridad</div>
         <div class="settings-card">
           <div class="settings-row">
             <div class="settings-label">
               <span class="settings-icon">🔒</span>
               <div>
-                <div class="settings-name">Bloquear Yuki con PIN</div>
-                <div class="settings-desc">Lo pide al abrir Yuki y al volver desde la bandeja</div>
+                <div class="settings-name" data-i18n="seg.bloqueo.nombre">Bloquear Yuki con PIN</div>
+                <div class="settings-desc" data-i18n="seg.bloqueo.desc">Lo pide al abrir Yuki y al volver desde la bandeja</div>
               </div>
             </div>
             <div class="settings-control">
@@ -148,32 +179,33 @@
             <div class="settings-label">
               <span class="settings-icon">🔢</span>
               <div>
-                <div class="settings-name">PIN</div>
+                <div class="settings-name" data-i18n="seg.pin.nombre">PIN</div>
+                <!-- Sin data-i18n: es estado, no texto fijo. Lo pone renderer.js según haya PIN o no. -->
                 <div class="settings-desc" id="pin-status">Sin PIN configurado</div>
               </div>
             </div>
             <div class="settings-control" style="gap:6px">
-              <input type="password" id="pin-setup-input" placeholder="mín. 4 chars" maxlength="8"
+              <input type="password" id="pin-setup-input" data-i18n-ph="seg.pin.placeholder" placeholder="mín. 4 chars" maxlength="8"
                 style="width:110px;background:var(--bg-sidebar);border:1px solid var(--border-color);border-radius:6px;color:#e9edef;padding:5px 8px;outline:none;font-size:13px;user-select:text;-webkit-user-select:text;" />
-              <button class="backup-btn" id="pin-save-btn">Guardar</button>
+              <button class="backup-btn" id="pin-save-btn" data-i18n="seg.pin.guardar">Guardar</button>
             </div>
           </div>
         </div>
 
         <!-- Memoria RAM -->
-        <div class="section-title" style="margin-top:16px">Memoria RAM</div>
+        <div class="section-title" style="margin-top:16px" data-i18n="sec.memoria">Memoria RAM</div>
         <div class="settings-card">
           <div class="settings-row">
             <div class="settings-label">
               <span class="settings-icon">⏰</span>
               <div>
-                <div class="settings-name">Auto-sleep</div>
-                <div class="settings-desc">Hiberna apps inactivas para liberar RAM</div>
+                <div class="settings-name" data-i18n="mem.autosleep.nombre">Auto-sleep</div>
+                <div class="settings-desc" data-i18n="mem.autosleep.desc">Hiberna apps inactivas para liberar RAM</div>
               </div>
             </div>
             <div class="settings-control">
               <select id="auto-sleep-select">
-                <option value="0">Desactivado</option>
+                <option value="0" data-i18n="mem.autosleep.desactivado">Desactivado</option>
                 <option value="15">15 min</option>
                 <option value="30" selected>30 min</option>
                 <option value="60">60 min</option>
@@ -183,63 +215,63 @@
           <div class="settings-row" style="flex-direction:column;align-items:stretch">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
               <span class="settings-icon">💾</span>
-              <span class="settings-name">Uso de memoria</span>
+              <span class="settings-name" data-i18n="mem.uso">Uso de memoria</span>
             </div>
             <div id="memory-list" style="padding:0 4px">
-              <div style="font-size:11px;color:#667781">Esperando datos...</div>
+              <div style="font-size:11px;color:#667781" data-i18n="mem.esperando">Esperando datos...</div>
             </div>
           </div>
         </div>
 
         <!-- Datos y backup -->
-        <div class="section-title" style="margin-top:16px">Datos y backup</div>
+        <div class="section-title" style="margin-top:16px" data-i18n="sec.datos">Datos y backup</div>
         <div class="settings-card">
           <div class="settings-row">
             <div class="settings-label">
               <span class="settings-icon">💾</span>
               <div>
-                <div class="settings-name">Exportar configuración</div>
-                <div class="settings-desc">Guarda apps y ajustes en un archivo JSON</div>
+                <div class="settings-name" data-i18n="datos.exportar.nombre">Exportar configuración</div>
+                <div class="settings-desc" data-i18n="datos.exportar.desc">Guarda apps y ajustes en un archivo JSON</div>
               </div>
             </div>
             <div class="settings-control">
-              <button class="backup-btn" id="btn-export-config">Exportar</button>
+              <button class="backup-btn" id="btn-export-config" data-i18n="datos.exportar.btn">Exportar</button>
             </div>
           </div>
           <div class="settings-row">
             <div class="settings-label">
               <span class="settings-icon">📂</span>
               <div>
-                <div class="settings-name">Importar configuración</div>
-                <div class="settings-desc">Restaura desde un backup anterior</div>
+                <div class="settings-name" data-i18n="datos.importar.nombre">Importar configuración</div>
+                <div class="settings-desc" data-i18n="datos.importar.desc">Restaura desde un backup anterior</div>
               </div>
             </div>
             <div class="settings-control">
-              <button class="backup-btn" id="btn-import-config">Importar</button>
+              <button class="backup-btn" id="btn-import-config" data-i18n="datos.importar.btn">Importar</button>
             </div>
           </div>
           <div class="settings-row">
             <div class="settings-label">
               <span class="settings-icon">🔑</span>
               <div>
-                <div class="settings-name">Sesiones de apps</div>
-                <div class="settings-desc">Abre la carpeta con los datos de WhatsApp, Gmail, etc.</div>
+                <div class="settings-name" data-i18n="datos.sesiones.nombre">Sesiones de apps</div>
+                <div class="settings-desc" data-i18n="datos.sesiones.desc">Abre la carpeta con los datos de WhatsApp, Gmail, etc.</div>
               </div>
             </div>
             <div class="settings-control">
-              <button class="backup-btn" id="btn-open-userdata">Ver carpeta</button>
+              <button class="backup-btn" id="btn-open-userdata" data-i18n="datos.sesiones.btn">Ver carpeta</button>
             </div>
           </div>
           <div class="settings-row">
             <div class="settings-label">
               <span class="settings-icon">💾</span>
               <div>
-                <div class="settings-name">Cachés en disco</div>
-                <div class="settings-desc" id="cache-total">Calculando...</div>
+                <div class="settings-name" data-i18n="datos.caches.nombre">Cachés en disco</div>
+                <div class="settings-desc" id="cache-total" data-i18n="datos.caches.calculando">Calculando...</div>
               </div>
             </div>
             <div class="settings-control">
-              <button class="backup-btn" id="btn-clear-caches">Liberar</button>
+              <button class="backup-btn" id="btn-clear-caches" data-i18n="datos.caches.btn">Liberar</button>
             </div>
           </div>
           <div id="cache-list" style="padding:0 4px"></div>
@@ -247,23 +279,23 @@
             <div class="settings-label">
               <span class="settings-icon">🎙️</span>
               <div>
-                <div class="settings-name">Permisos de sitios</div>
-                <div class="settings-desc">Cámara, micrófono y ubicación que permitiste o bloqueaste</div>
+                <div class="settings-name" data-i18n="datos.permisos.nombre">Permisos de sitios</div>
+                <div class="settings-desc" data-i18n="datos.permisos.desc">Cámara, micrófono y ubicación que permitiste o bloqueaste</div>
               </div>
             </div>
             <div class="settings-control">
-              <button class="backup-btn" id="btn-reset-permissions">Olvidar todo</button>
+              <button class="backup-btn" id="btn-reset-permissions" data-i18n="datos.permisos.btn">Olvidar todo</button>
             </div>
           </div>
           <div id="permissions-list" style="padding:0 4px">
-            <div class="perm-empty">Ningún sitio ha pedido permisos todavía</div>
+            <div class="perm-empty" data-i18n="datos.permisos.vacio">Ningún sitio ha pedido permisos todavía</div>
           </div>
         </div>
 
         <!-- Catálogo -->
-        <div class="section-title" style="margin-top:16px">Agregar app</div>
+        <div class="section-title" style="margin-top:16px" data-i18n="sec.agregarApp">Agregar app</div>
 
-        <div class="catalog-section-label">Mensajería</div>
+        <div class="catalog-section-label" data-i18n="cat.mensajeria">Mensajería</div>
         <div class="catalog-grid" id="catalog-grid">
           <div class="catalog-item" role="button" tabindex="0" data-name="WhatsApp" data-icon="app:whatsapp" data-url="https://web.whatsapp.com">
             <div class="icon"><img src="../../icons/apps/whatsapp.png" alt="" aria-hidden="true" /></div><div class="name">WhatsApp</div>
@@ -300,7 +332,7 @@
           </div>
         </div>
 
-        <div class="catalog-section-label">Email</div>
+        <div class="catalog-section-label" data-i18n="cat.email">Email</div>
         <div class="catalog-grid">
           <div class="catalog-item" role="button" tabindex="0" data-name="Gmail" data-icon="app:gmail" data-url="https://mail.google.com/mail/u/0/">
             <div class="icon"><img src="../../icons/apps/gmail.png" alt="" aria-hidden="true" /></div><div class="name">Gmail</div>
@@ -316,7 +348,7 @@
           </div>
         </div>
 
-        <div class="catalog-section-label">Productividad</div>
+        <div class="catalog-section-label" data-i18n="cat.productividad">Productividad</div>
         <div class="catalog-grid">
           <div class="catalog-item" role="button" tabindex="0" data-name="Notion" data-icon="app:notion" data-url="https://www.notion.so">
             <div class="icon"><img src="../../icons/apps/notion.png" alt="" aria-hidden="true" /></div><div class="name">Notion</div>
@@ -350,7 +382,7 @@
           </div>
         </div>
 
-        <div class="catalog-section-label">Videollamadas</div>
+        <div class="catalog-section-label" data-i18n="cat.videollamadas">Videollamadas</div>
         <div class="catalog-grid">
           <div class="catalog-item" role="button" tabindex="0" data-name="Google Meet" data-icon="app:googlemeet" data-url="https://meet.google.com">
             <div class="icon"><img src="../../icons/apps/googlemeet.png" alt="" aria-hidden="true" /></div><div class="name">Meet</div>
@@ -363,82 +395,83 @@
           </div>
         </div>
 
-        <div class="section-title">Apps activas</div>
+        <div class="section-title" data-i18n="sec.appsActivas">Apps activas</div>
         <div class="services-list" id="services-list">
-          <div class="empty-msg">No hay apps configuradas</div>
+          <div class="empty-msg" data-i18n="apps.vacio">No hay apps configuradas</div>
         </div>
 
         <div class="add-form">
-          <h3><i data-lucide="plus-circle" class="icon-lucide"></i> App personalizada</h3>
+          <h3><i data-lucide="plus-circle" class="icon-lucide"></i> <span data-i18n="custom.titulo">App personalizada</span></h3>
           <div class="form-row">
-            <label for="custom-name">Nombre</label>
-            <input type="text" id="custom-name" placeholder="Mi App" />
+            <label for="custom-name" data-i18n="custom.nombre">Nombre</label>
+            <input type="text" id="custom-name" data-i18n-ph="custom.nombrePh" placeholder="Mi App" />
           </div>
           <div class="form-row">
-            <label for="custom-url">URL</label>
+            <label for="custom-url" data-i18n="custom.url">URL</label>
             <input type="text" id="custom-url" placeholder="https://..." />
           </div>
           <div class="form-row">
-            <label for="custom-icon">Icono (emoji)</label>
+            <label for="custom-icon" data-i18n="custom.icono">Icono (emoji)</label>
             <input type="text" id="custom-icon" placeholder="🌐" />
           </div>
-          <button class="btn-add" id="btn-add-custom">+ Agregar</button>
+          <button class="btn-add" id="btn-add-custom" data-i18n="custom.agregar">+ Agregar</button>
         </div>
 
         <!-- Acerca de -->
-        <div class="section-title" style="margin-top:24px">Acerca de Yuki</div>
+        <div class="section-title" style="margin-top:24px" data-i18n="sec.acerca">Acerca de Yuki</div>
         <div class="settings-card about-card">
 
           <div class="about-head">
             <img src="../../icons/icon.png" alt="" aria-hidden="true" class="about-logo" />
             <div>
               <div class="about-name">Yuki</div>
-              <div class="about-ver">Versión <span id="about-version">…</span></div>
-              <div class="about-sub">Todas tus apps web en una sola ventana</div>
+              <div class="about-ver"><span data-i18n="about.version">Versión</span> <span id="about-version">…</span></div>
+              <div class="about-sub" data-i18n="about.sub">Todas tus apps web en una sola ventana</div>
             </div>
           </div>
 
           <div class="about-sec">
-            <div class="about-label">Actualizaciones</div>
+            <div class="about-label" data-i18n="about.actualizaciones">Actualizaciones</div>
             <div class="about-update">
+              <!-- Sin data-i18n: es estado del buscador de actualizaciones, lo pone renderer.js -->
               <span id="about-update-state">Comprobando…</span>
-              <button class="backup-btn" id="btn-check-update">Buscar</button>
+              <button class="backup-btn" id="btn-check-update" data-i18n="about.buscar">Buscar</button>
             </div>
           </div>
 
           <div class="about-sec">
-            <div class="about-label">Enlaces</div>
+            <div class="about-label" data-i18n="about.enlaces">Enlaces</div>
             <div class="about-links">
-              <a href="#" data-ext="https://foxen2005.github.io/yuki/"><i data-lucide="globe" class="icon-lucide"></i> Sitio web y descargas</a>
-              <a href="#" data-ext="https://github.com/foxen2005/yuki/releases/latest"><i data-lucide="sparkles" class="icon-lucide"></i> Novedades de esta versión</a>
-              <a href="#" data-ext="https://github.com/foxen2005/yuki/issues/new"><i data-lucide="bug" class="icon-lucide"></i> Reportar un problema</a>
-              <a href="#" data-ext="https://github.com/foxen2005/yuki"><i data-lucide="code" class="icon-lucide"></i> Código fuente (MIT)</a>
+              <a href="#" data-ext="https://foxen2005.github.io/yuki/"><i data-lucide="globe" class="icon-lucide"></i> <span data-i18n="about.sitio">Sitio web y descargas</span></a>
+              <a href="#" data-ext="https://github.com/foxen2005/yuki/releases/latest"><i data-lucide="sparkles" class="icon-lucide"></i> <span data-i18n="about.novedades">Novedades de esta versión</span></a>
+              <a href="#" data-ext="https://github.com/foxen2005/yuki/issues/new"><i data-lucide="bug" class="icon-lucide"></i> <span data-i18n="about.reportar">Reportar un problema</span></a>
+              <a href="#" data-ext="https://github.com/foxen2005/yuki"><i data-lucide="code" class="icon-lucide"></i> <span data-i18n="about.codigo">Código fuente (MIT)</span></a>
             </div>
           </div>
 
           <div class="about-sec">
-            <div class="about-label">Atajos de teclado</div>
+            <div class="about-label" data-i18n="about.atajos">Atajos de teclado</div>
             <div class="about-keys">
-              <div><kbd>Ctrl</kbd><kbd>1</kbd>…<kbd>9</kbd> Cambiar de app</div>
-              <div><kbd>Esc</kbd> Cerrar este panel</div>
-              <div><kbd>Enter</kbd> Confirmar el PIN</div>
-              <div><kbd>Tab</kbd> Recorrer el catálogo</div>
+              <div><kbd>Ctrl</kbd><kbd>1</kbd>…<kbd>9</kbd> <span data-i18n="about.atajo.cambiar">Cambiar de app</span></div>
+              <div><kbd>Esc</kbd> <span data-i18n="about.atajo.cerrarPanel">Cerrar este panel</span></div>
+              <div><kbd>Enter</kbd> <span data-i18n="about.atajo.pin">Confirmar el PIN</span></div>
+              <div><kbd>Tab</kbd> <span data-i18n="about.atajo.catalogo">Recorrer el catálogo</span></div>
             </div>
-            <div class="about-note">Solo funcionan con Yuki en primer plano: nunca se capturan teclas de otras aplicaciones.</div>
+            <div class="about-note" data-i18n="about.atajosNota">Solo funcionan con Yuki en primer plano: nunca se capturan teclas de otras aplicaciones.</div>
           </div>
 
           <div class="about-sec">
-            <div class="about-label">Tecnología</div>
+            <div class="about-label" data-i18n="about.tecnologia">Tecnología</div>
             <div class="about-tech" id="about-tech">…</div>
-            <div class="about-tech">contextIsolation · sandbox · PIN cifrado con safeStorage</div>
+            <div class="about-tech" data-i18n="about.tecnologiaDetalle">contextIsolation · sandbox · PIN cifrado con safeStorage</div>
           </div>
 
           <div class="about-sec">
-            <div class="about-label">Datos</div>
+            <div class="about-label" data-i18n="about.datos">Datos</div>
             <div class="about-tech" id="about-userdata">…</div>
           </div>
 
-          <div class="about-foot">© 2025-2026 Digital Fox · Licencia MIT</div>
+          <div class="about-foot" data-i18n="about.pie">© 2025-2026 Digital Fox · Licencia MIT</div>
         </div>
 
       </div>
@@ -449,15 +482,29 @@
   <div id="toast"></div>
   <div id="toast-update"></div>
 
+  <!-- Aviso de Digital Fox. El contenido lo pone renderer.js con textContent,
+       nunca con innerHTML: el texto viene de internet. -->
+  <div id="aviso-banner" style="display:none">
+    <div id="aviso-banner-inner">
+      <span style="font-size:20px"><i data-lucide="megaphone" class="icon-lucide"></i></span>
+      <div style="flex:1;min-width:0">
+        <div id="aviso-titulo"></div>
+        <div id="aviso-texto"></div>
+      </div>
+      <button id="aviso-accion" style="display:none"></button>
+      <button id="aviso-cerrar" class="icon-btn" data-i18n-title="aviso.cerrar" data-i18n-aria="aviso.cerrar" title="No volver a mostrar" aria-label="No volver a mostrar"><i data-lucide="x" class="icon-lucide"></i></button>
+    </div>
+  </div>
+
   <!-- Banner de autenticacion Google -->
   <div id="google-auth-banner" style="display:none">
     <div id="google-auth-banner-inner">
       <span style="font-size:20px"><i data-lucide="lock" class="icon-lucide"></i></span>
       <div style="flex:1">
-        <div style="font-size:13px;font-weight:600;color:#e9edef">Google bloquea el login en apps embebidas</div>
-        <div style="font-size:11px;color:#667781;margin-top:2px">Abre una ventana separada para iniciar sesion</div>
+        <div style="font-size:13px;font-weight:600;color:#e9edef" data-i18n="google.titulo">Google bloquea el login en apps embebidas</div>
+        <div style="font-size:11px;color:#667781;margin-top:2px" data-i18n="google.desc">Abre una ventana separada para iniciar sesión</div>
       </div>
-      <button id="google-auth-btn">Iniciar sesion</button>
+      <button id="google-auth-btn" data-i18n="google.btn">Iniciar sesión</button>
     </div>
   </div>
 

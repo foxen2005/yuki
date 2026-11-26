@@ -2,6 +2,7 @@ const { BrowserWindow, Tray, Menu, nativeImage, dialog } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const { app } = require('electron')
+const { t } = require('./idioma')
 
 const ICONS_DIR = path.join(app.getAppPath(), 'icons')
 
@@ -80,14 +81,17 @@ function createTray(mainWin) {
   tray = new Tray(trayIcon)
   tray.setToolTip('Yuki')
 
-  const contextMenu = Menu.buildFromTemplate([
-    { label: 'Abrir Yuki', click: () => showMain(mainWin) },
+  // Se arma en una función para poder rehacerlo al cambiar de idioma: el menú
+  // de la bandeja es lo único de la app que no se vuelve a construir solo en
+  // cada uso (los contextuales y los diálogos sí).
+  const construirMenu = () => Menu.buildFromTemplate([
+    { label: t('tray.abrirYuki'), click: () => showMain(mainWin) },
     // Salida de emergencia para una flotante pegada: una ventana que no
     // responde no se cierra con su propia X, y el menú de la bandeja es lo
     // único que sigue estando a mano. Siempre visible, aunque no haya ninguna
     // abierta: setContextMenu no se vuelve a construir en cada clic, y el
     // usuario que la necesita no va a estar para descubrir un item nuevo.
-    { label: 'Cerrar ventanas flotantes', click: () => {
+    { label: t('tray.cerrarFlotantes'), click: () => {
       const vm = mainWin && !mainWin.isDestroyed() && mainWin._viewManager
       if (!vm) return
       const n = vm.contarFlotantes()
@@ -97,17 +101,19 @@ function createTray(mainWin) {
       if (!n) return
       const r = dialog.showMessageBoxSync({
         type: 'warning', noLink: true, title: 'Yuki',
-        message: n === 1 ? 'Cerrar la ventana flotante abierta' : `Cerrar las ${n} ventanas flotantes abiertas`,
-        detail: 'Se cierran a la fuerza, sin preguntar a las páginas: vas a perder lo que no esté guardado.',
-        buttons: ['Cerrarlas', 'Cancelar'],
+        message: n === 1 ? t('tray.cerrarFlotantes.una') : t('tray.cerrarFlotantes.varias', { n }),
+        detail: t('tray.cerrarFlotantes.detalle'),
+        buttons: [t('tray.cerrarFlotantes.btn'), t('dialog.cancelar')],
         defaultId: 1, cancelId: 1,
       })
       if (r === 0) vm.cerrarTodasLasFlotantes()
     } },
     { type: 'separator' },
-    { label: 'Salir', click: () => { app.isQuiting = true; app.quit() } },
+    { label: t('tray.salir'), click: () => { app.isQuiting = true; app.quit() } },
   ])
-  tray.setContextMenu(contextMenu)
+  tray.setContextMenu(construirMenu())
+  // Lo llama ipc-handlers al cambiar el idioma.
+  tray.rehacerMenu = () => { try { tray.setContextMenu(construirMenu()) } catch (e) {} }
 
   tray.on('click', () => {
     // isVisible() es true para una ventana minimizada en Windows: hay que
@@ -141,5 +147,6 @@ function registerShortcuts(mainWin) {
 }
 
 function getWin() { return win }
+function getTray() { return tray }
 
-module.exports = { createWindow, createTray, registerShortcuts, bindAppSwitchKeys, getWin, showMain }
+module.exports = { createWindow, createTray, registerShortcuts, bindAppSwitchKeys, getWin, getTray, showMain }

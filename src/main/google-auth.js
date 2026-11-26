@@ -1,6 +1,7 @@
 const { BrowserWindow, session } = require('electron')
 const path = require('path')
 const { spoofSession, getChromeUA } = require('./session-manager')
+const { t } = require('./idioma')
 
 function openGoogleLogin(win, partition, { clearFirst = false } = {}) {
   return new Promise(async (resolve) => {
@@ -26,7 +27,7 @@ function openGoogleLogin(win, partition, { clearFirst = false } = {}) {
     const loginWin = new BrowserWindow({
       width: 520,
       height: 680,
-      title: 'Iniciar sesion en Google — Yuki',
+      title: t('google.ventanaTitulo'),
       backgroundColor: '#fff',
       autoHideMenuBar: true,
       parent: win,

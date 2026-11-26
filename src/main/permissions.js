@@ -5,6 +5,7 @@
 //   - lo sensible se pregunta UNA vez por (origen, permiso) y se recuerda en userData/permissions.json
 //   - lo que Yuki no necesita se niega siempre (MIDI, HID, serial, USB)
 const { app, dialog } = require('electron')
+const { t } = require('./idioma')
 const path = require('path')
 const fs = require('fs')
 
@@ -25,14 +26,19 @@ const ASK = new Set(['media', 'geolocation', 'display-capture', 'mediaKeySystem'
 const MEDIA_AUDIO = 'media:audio'
 const MEDIA_VIDEO = 'media:video'
 
-const LABELS = {
-  [MEDIA_AUDIO]: 'usar el micrófono',
-  [MEDIA_VIDEO]: 'usar la cámara',
-  geolocation: 'conocer tu ubicación',
-  'display-capture': 'capturar tu pantalla',
-  mediaKeySystem: 'reproducir contenido protegido (DRM)',
-  'speaker-selection': 'elegir el dispositivo de salida de audio',
+// Las etiquetas se resuelven al usarse, no al cargar el módulo: si fueran
+// constantes se quedarían con el idioma que hubiera al arrancar y no cambiarían
+// al elegir otro en Configuración.
+const CLAVES_LABEL = {
+  [MEDIA_AUDIO]: 'permiso.microfono',
+  [MEDIA_VIDEO]: 'permiso.camara',
+  geolocation: 'permiso.ubicacion',
+  'display-capture': 'permiso.pantalla',
+  mediaKeySystem: 'permiso.drm',
+  'speaker-selection': 'permiso.altavoz',
 }
+const LABELS = new Proxy({}, { get: (_, k) => CLAVES_LABEL[k] ? t(CLAVES_LABEL[k]) : undefined,
+                               has: (_, k) => k in CLAVES_LABEL })
 
 let store = null
 const STORE_PATH = () => path.join(app.getPath('userData'), 'permissions.json')
@@ -73,10 +79,10 @@ const pending = new Map()
 async function ask(win, origin, claves, textos) {
   const p = dialog.showMessageBox(win, {
     type: 'question',
-    title: 'Permiso',
-    message: `${origin} quiere ${textos.join(' y ')}`,
-    detail: 'Yuki recordará tu decisión para este sitio. Puedes cambiarla, por dispositivo, en Configuración → Permisos de sitios.',
-    buttons: ['Permitir', 'Bloquear'],
+    title: t('permiso.titulo'),
+    message: t('permiso.mensaje', { origen: origin, acciones: textos.join(t('permiso.y')) }),
+    detail: t('permiso.detalle'),
+    buttons: [t('permiso.permitir'), t('permiso.bloquear')],
     defaultId: 0,
     cancelId: 1,
     noLink: true,

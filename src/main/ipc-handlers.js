@@ -7,6 +7,10 @@ const { checkNow } = require('./updater')
 const pin = require('./pin')
 const lockWindow = require('./lock-window')
 const { mismoSitio } = require('../shared/dominio')
+const idioma = require('./idioma')
+const { t } = idioma
+const avisos = require('./avisos')
+const { getTray } = require('./window')
 
 function registerHandlers({ win, viewManager }) {
 
@@ -72,6 +76,25 @@ function registerHandlers({ win, viewManager }) {
   ipcMain.on('view:mismo-sitio', (event, destino, pagina) => {
     event.returnValue = mismoSitio(destino, pagina)
   })
+
+  // ── Idioma ────────────────────────────────────────────────────────────────
+  // 'i18n:paquete' no está aquí: lo registra src/main/idioma.js al cargarse,
+  // porque el preload lo pide antes de que esta función llegue a correr.
+  ipcMain.handle('i18n:fijar', (_, codigo) => {
+    if (!idioma.fijar(codigo)) return { ok: false }
+    // El menú de la bandeja es lo único que no se reconstruye solo al usarse.
+    try { const tr = getTray(); if (tr && tr.rehacerMenu) tr.rehacerMenu() } catch (e) {}
+    // Y el corrector ortográfico de las vistas ya abiertas, que nació con el
+    // idioma anterior.
+    try { viewManager.actualizarCorrector() } catch (e) {}
+    return { ok: true, ...idioma.paquete() }
+  })
+
+  // ── Avisos ────────────────────────────────────────────────────────────────
+  ipcMain.handle('avisos:pendiente', () => avisos.pendiente(idioma.idioma()))
+  ipcMain.handle('avisos:cerrar',    (_, id) => avisos.cerrar(id))
+  ipcMain.handle('avisos:activados', () => avisos.activados())
+  ipcMain.handle('avisos:activar',   (_, valor) => avisos.activar(valor))
 
   // ── Cachés en disco ───────────────────────────────────────────────────────
   // Mide y libera lo que ocupan las apps SIN tocar cookies ni IndexedDB, que
@@ -157,9 +180,9 @@ function registerHandlers({ win, viewManager }) {
   ipcMain.handle('config:export', async (_, data) => {
     const date = new Date().toISOString().slice(0, 10)
     const { filePath, canceled } = await dialog.showSaveDialog(win, {
-      title: 'Exportar configuración de Yuki',
+      title: t('dialog.exportar.titulo'),
       defaultPath: `yuki-backup-${date}.json`,
-      filters: [{ name: 'Backup Yuki', extensions: ['json'] }],
+      filters: [{ name: t('dialog.backupFiltro'), extensions: ['json'] }],
     })
     if (canceled || !filePath) return { ok: false, canceled: true }
     try {
@@ -172,8 +195,8 @@ function registerHandlers({ win, viewManager }) {
 
   ipcMain.handle('config:import', async () => {
     const { filePaths, canceled } = await dialog.showOpenDialog(win, {
-      title: 'Importar configuración de Yuki',
-      filters: [{ name: 'Backup Yuki', extensions: ['json'] }],
+      title: t('dialog.importar.titulo'),
+      filters: [{ name: t('dialog.backupFiltro'), extensions: ['json'] }],
       properties: ['openFile'],
     })
     if (canceled || !filePaths.length) return { ok: false, canceled: true }
@@ -219,10 +242,10 @@ function registerHandlers({ win, viewManager }) {
     // Con el bloqueo puesto, cambiar el PIN desde el renderer principal era
     // saltárselo: guardas 0000 y entras. La pantalla de bloqueo está delante,
     // pero el renderer sigue vivo y escuchando IPC.
-    if (lockWindow.bloqueado()) return { ok: false, error: 'Yuki está bloqueado' }
+    if (lockWindow.bloqueado()) return { ok: false, error: t('error.yukiBloqueado') }
     const texto = String(valor ?? '')
     // La interfaz ya lo exige, pero un PIN vacío aquí lo aceptaría cualquiera
-    if (texto.length < 4) return { ok: false, error: 'Mínimo 4 caracteres' }
+    if (texto.length < 4) return { ok: false, error: t('error.pinMinimo') }
     return pin.guardar(texto)
   })
   ipcMain.handle('pin:has',  () => pin.existe())

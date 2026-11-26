@@ -1,6 +1,12 @@
 // Preload del BrowserWindow principal — expone yukiAPI al renderer con contextBridge
 const { contextBridge, ipcRenderer } = require('electron')
 
+// El paquete de textos se pide de forma síncrona, aquí y no desde el renderer:
+// tiene que estar listo antes de que la página pinte nada, o la interfaz se
+// vería un instante en español antes de saltar al idioma bueno.
+let i18n = { idioma: 'es', idiomas: [], textos: {} }
+try { i18n = ipcRenderer.sendSync('i18n:paquete') || i18n } catch (e) {}
+
 const ALLOWED_EVENTS = [
   'google-auth-done',
   'yuki-window-show',
@@ -18,6 +24,16 @@ const ALLOWED_EVENTS = [
 ]
 
 contextBridge.exposeInMainWorld('yukiAPI', {
+  // ── Idioma ───────────────────────────────────────────────────────────────
+  i18n,
+  setIdioma: (codigo) => ipcRenderer.invoke('i18n:fijar', codigo),
+
+  // ── Avisos ───────────────────────────────────────────────────────────────
+  avisoPendiente:  ()      => ipcRenderer.invoke('avisos:pendiente'),
+  cerrarAviso:     (id)    => ipcRenderer.invoke('avisos:cerrar', id),
+  avisosActivados: ()      => ipcRenderer.invoke('avisos:activados'),
+  activarAvisos:   (valor) => ipcRenderer.invoke('avisos:activar', valor),
+
   // ── Ciclo de vida de vistas ──────────────────────────────────────────────
   openView:    (id, url, partition) => ipcRenderer.invoke('view:open', id, url, partition),
   showView:    (id)                 => ipcRenderer.invoke('view:show', id),

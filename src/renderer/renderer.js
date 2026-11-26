@@ -2,6 +2,42 @@ window.addEventListener('error', (e) => {
   console.error('[Yuki] Error:', e.message, 'at', e.filename, e.lineno)
 })
 
+// ── Idioma ───────────────────────────────────────────────────────────────────
+// El paquete de textos ya viene resuelto desde el preload, de forma síncrona:
+// aquí nunca hay un momento sin textos, así que t() se puede usar desde la
+// primera línea sin esperar a nada.
+let I18N = (window.yukiAPI && window.yukiAPI.i18n) || { idioma: 'es', idiomas: [], textos: {} }
+
+function t(clave, vars) {
+  let s = I18N.textos[clave]
+  // Sin la clave se devuelve la clave: en pantalla se ve 'config.titulo' en vez
+  // de un hueco. Es feo, pero se caza a la primera y no rompe el diseño como
+  // un 'undefined'.
+  if (typeof s !== 'string') return clave
+  if (vars) s = s.replace(/\{(\w+)\}/g, (m, k) =>
+    Object.prototype.hasOwnProperty.call(vars, k) ? String(vars[k]) : m)
+  return s
+}
+
+// Recorre el HTML y rellena todo lo marcado con data-i18n. Se llama al arrancar
+// y cada vez que se cambia de idioma, así que tiene que ser idempotente: por
+// eso escribe siempre desde la clave y nunca sobre lo que ya hay.
+function aplicarIdioma() {
+  document.documentElement.lang = I18N.idioma
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.dataset.i18n)
+  })
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    el.title = t(el.dataset.i18nTitle)
+  })
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+    el.setAttribute('aria-label', t(el.dataset.i18nAria))
+  })
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    el.placeholder = t(el.dataset.i18nPh)
+  })
+}
+
 // ── Estado ───────────────────────────────────────────────────────────────────
 const STORAGE_KEY = 'yuki-apps'
 const SETTINGS_KEY = 'yuki-settings'
@@ -54,7 +90,7 @@ async function showLock() {
     // activado. Callarlo sería lo peor: el usuario lo cree bloqueado y no lo
     // está. Al menos que lo sepa y pueda cerrar la app.
     console.error('[Yuki] no se pudo bloquear:', e)
-    showToast('No se pudo bloquear Yuki — ciérralo para proteger tus sesiones', 6000)
+    showToast(t('toast.bloqueoFallo'), 6000)
     return
   }
   // Sin PIN guardado (o con el almacén ilegible) la ventana no se muestra: no
@@ -66,8 +102,8 @@ async function showLock() {
   // siguiente el PIN volviera a leerse. De devolver las flotantes escondidas se
   // encarga el proceso principal en el mismo lock:show.
   if (r && r.motivo === 'sin-pin') {
-    showToast('Yuki no se bloqueó: no encuentra un PIN que lo pueda quitar. Vuelve a guardarlo en Configuración.', 7000)
-  } else if (r && !r.ok) showToast('No se pudo bloquear Yuki', 4000)
+    showToast(t('toast.bloqueoSinPin'), 7000)
+  } else if (r && !r.ok) showToast(t('toast.bloqueoFalloCorto'), 4000)
 }
 
 // Pedirlo es idempotente: si ya está bloqueado, el proceso principal solo
@@ -96,11 +132,14 @@ function syncViewLayout() {
 // Toast normal. El aviso de actualización usa un elemento aparte (#toast-update)
 // para que ninguno de los dos tape o descarte al otro.
 function showToast(msg, duration = 2000) {
-  const t = document.getElementById('toast')
-  t.textContent = msg
-  t.classList.add('show')
+  // 'caja' y no 't': ese nombre es el de la función de traducción, y tenerlo
+  // tapado aquí dentro es una trampa esperando a que alguien añada un t() en
+  // esta función.
+  const caja = document.getElementById('toast')
+  caja.textContent = msg
+  caja.classList.add('show')
   clearTimeout(showToast._timer)
-  showToast._timer = setTimeout(() => t.classList.remove('show'), duration)
+  showToast._timer = setTimeout(() => caja.classList.remove('show'), duration)
 }
 
 // ── Escape HTML ───────────────────────────────────────────────────────────────
@@ -125,7 +164,7 @@ function renderIconHTML(icon) {
 
 // ── Loading overlay ───────────────────────────────────────────────────────────
 function showLoading(name) {
-  document.getElementById('loading-label').textContent = `Cargando ${name}...`
+  document.getElementById('loading-label').textContent = t('content.cargandoApp', { nombre: name })
   document.getElementById('loading-overlay').classList.add('visible')
 }
 function hideLoading() {
@@ -274,7 +313,7 @@ function render() {
 function renderServicesList(apps) {
   const list = document.getElementById('services-list')
   if (apps.length === 0) {
-    list.innerHTML = '<div class="empty-msg">No hay apps configuradas aun</div>'
+    list.innerHTML = `<div class="empty-msg">${esc(t('apps.vacio'))}</div>`
     return
   }
   list.innerHTML = ''
@@ -283,31 +322,31 @@ function renderServicesList(apps) {
     card.className = 'service-card'
     card.innerHTML = `
       <div class="svc-top-row">
-        <div class="svc-icon-wrap" title="Click para cambiar imagen" role="button" tabindex="0" aria-label="Cambiar imagen">
+        <div class="svc-icon-wrap" title="${esc(t('svc.cambiarImagen'))}" role="button" tabindex="0" aria-label="${esc(t('svc.cambiarImagen'))}">
           ${renderIconHTML(app.icon)}
         </div>
         <div class="service-info">
           <div class="svc-name-wrap">
-            <span class="svc-name" title="Click para renombrar">${esc(app.name)}</span>
+            <span class="svc-name" title="${esc(t('svc.renombrar'))}">${esc(app.name)}</span>
             <input class="svc-name-input" type="text" value="${esc(app.name)}" style="display:none" />
           </div>
           <div class="svc-url">${esc(app.url)}</div>
         </div>
       </div>
       <div class="service-actions">
-        <div class="sleep-toggle-wrap" title="Sleep: hiberna esta app cuando no está activa para ahorrar RAM">
-          <span class="sleep-label"><i data-lucide="moon" class="icon-lucide"></i> Sleep</span>
+        <div class="sleep-toggle-wrap" title="${esc(t('svc.sleepTooltip'))}">
+          <span class="sleep-label"><i data-lucide="moon" class="icon-lucide"></i> ${esc(t('svc.sleepLabel'))}</span>
           <label class="toggle">
-            <input type="checkbox" class="sleep-checkbox" aria-label="Habilitar hibernación para ${esc(app.name)}" ${app.sleep ? 'checked' : ''} />
+            <input type="checkbox" class="sleep-checkbox" aria-label="${esc(t('svc.habilitarHibernacion', { nombre: app.name }))}" ${app.sleep ? 'checked' : ''} />
             <span class="toggle-slider"></span>
           </label>
         </div>
-        <button class="icon-btn move-up" title="Subir" aria-label="Subir app" ${i === 0 ? 'disabled' : ''}><i data-lucide="chevron-up" class="icon-lucide"></i></button>
-        <button class="icon-btn move-down" title="Bajar" aria-label="Bajar app" ${i === apps.length - 1 ? 'disabled' : ''}><i data-lucide="chevron-down" class="icon-lucide"></i></button>
-        <button class="icon-btn reload-btn" title="Recargar" aria-label="Recargar app"><i data-lucide="refresh-cw" class="icon-lucide"></i></button>
-        <button class="icon-btn clear-session-btn" title="Limpiar caché y sesión (reinicia el login)" aria-label="Limpiar caché y sesión"><i data-lucide="eraser" class="icon-lucide"></i></button>
-        ${app.url.includes('google.com') ? `<button class="icon-btn google-login-btn" title="Iniciar sesion Google" aria-label="Iniciar sesión en Google"><i data-lucide="key" class="icon-lucide"></i></button>` : ''}
-        <button class="icon-btn danger" title="Eliminar" aria-label="Eliminar app"><i data-lucide="trash-2" class="icon-lucide"></i></button>
+        <button class="icon-btn move-up" title="${esc(t('svc.subir'))}" aria-label="${esc(t('svc.subir'))}" ${i === 0 ? 'disabled' : ''}><i data-lucide="chevron-up" class="icon-lucide"></i></button>
+        <button class="icon-btn move-down" title="${esc(t('svc.bajar'))}" aria-label="${esc(t('svc.bajar'))}" ${i === apps.length - 1 ? 'disabled' : ''}><i data-lucide="chevron-down" class="icon-lucide"></i></button>
+        <button class="icon-btn reload-btn" title="${esc(t('svc.recargar'))}" aria-label="${esc(t('svc.recargar'))}"><i data-lucide="refresh-cw" class="icon-lucide"></i></button>
+        <button class="icon-btn clear-session-btn" title="${esc(t('svc.limpiar'))}" aria-label="${esc(t('svc.limpiar'))}"><i data-lucide="eraser" class="icon-lucide"></i></button>
+        ${app.url.includes('google.com') ? `<button class="icon-btn google-login-btn" title="${esc(t('svc.googleLogin'))}" aria-label="${esc(t('svc.googleLogin'))}"><i data-lucide="key" class="icon-lucide"></i></button>` : ''}
+        <button class="icon-btn danger" title="${esc(t('svc.eliminar'))}" aria-label="${esc(t('svc.eliminar'))}"><i data-lucide="trash-2" class="icon-lucide"></i></button>
       </div>
     `
 
@@ -351,7 +390,7 @@ function renderServicesList(apps) {
           target.name = newName
           saveApps(allApps)
           render()
-          showToast(`Renombrado a "${newName}"`)
+          showToast(t('toast.renombrado', { nombre: newName }))
           return
         }
       }
@@ -391,7 +430,7 @@ function renderServicesList(apps) {
         saveApps(allApps)
         // Notificar al proceso main para que respete el toggle en el auto-sleep
         window.yukiAPI.setSleepable(app.id, target.sleep).catch(() => { })
-        showToast(target.sleep ? `Sleep activado en ${app.name}` : `Sleep desactivado en ${app.name}`)
+        showToast(t(target.sleep ? 'toast.sleepOn' : 'toast.sleepOff', { nombre: app.name }))
       }
     })
 
@@ -407,15 +446,15 @@ function renderServicesList(apps) {
     card.querySelector('.reload-btn').addEventListener('click', () => {
       // No se llama switchTo(): con el panel abierto traería la vista encima
       window.yukiAPI.reloadView(app.id).catch(() => { })
-      if (createdViews.has(app.id)) showToast(`Recargando ${app.name}`)
+      if (createdViews.has(app.id)) showToast(t('toast.recargando', { nombre: app.name }))
       else switchTo(app.id)
     })
 
     // Limpiar sesión
     card.querySelector('.clear-session-btn').addEventListener('click', () => {
-      if (!confirm(`¿Borrar caché y sesión de ${app.name}?\nDeberás iniciar sesión de nuevo.`)) return
+      if (!confirm(t('confirm.borrarSesion', { nombre: app.name }))) return
       window.yukiAPI.clearSession(`persist:${app.id}`)
-        .then(() => showToast(`Limpiando sesión de ${app.name}...`, 2000))
+        .then(() => showToast(t('toast.limpiandoSesion', { nombre: app.name }), 2000))
         .catch(() => { })
     })
 
@@ -448,7 +487,7 @@ function addFromCatalog(name, icon, url) {
   // normal y taparía el panel (las vistas nativas van sobre el DOM)
   closeSettings()
   switchTo(id)
-  showToast(`${label} agregado`)
+  showToast(t('toast.agregado', { nombre: label }))
 }
 
 function addCustomApp() {
@@ -468,7 +507,7 @@ function addCustomApp() {
   // normal y taparía el panel (las vistas nativas van sobre el DOM)
   closeSettings()
   switchTo(id)
-  showToast(`${name} agregado`)
+  showToast(t('toast.agregado', { nombre: name }))
 }
 
 function removeApp(id) {
@@ -478,7 +517,7 @@ function removeApp(id) {
   saveApps(apps)
   if (activeId === id) activeId = null
   render()
-  if (app) showToast(`${app.name} eliminado`)
+  if (app) showToast(t('toast.eliminado', { nombre: app.name }))
 }
 
 // ── Icon picker ───────────────────────────────────────────────────────────────
@@ -501,7 +540,7 @@ function resizeImage(dataUrl, size, callback) {
     ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size)
     callback(canvas.toDataURL('image/png'))
   }
-  img.onerror = () => showToast('Error al cargar imagen')
+  img.onerror = () => showToast(t('toast.errorImagen'))
   img.src = dataUrl
 }
 
@@ -523,21 +562,35 @@ async function renderAbout() {
   document.getElementById('about-userdata').textContent = info.userData
 }
 
+// El último resultado, para poder repintarlo traducido al cambiar de idioma
+// sin volver a consultar. Volver a consultar NO es gratis: autoDownload está
+// en true, así que cada comprobación puede arrancar la descarga de un
+// instalador de 80 MB — elegir un idioma no puede hacer eso.
+let ultimoUpdate = null
+
+function pintarEstadoUpdate(r) {
+  const el = document.getElementById('about-update-state')
+  if (!el || !r) return
+  el.className = ''
+  if (r.estado === 'al-dia') { el.className = 'ok'; el.textContent = t('update.alDia') }
+  else if (r.estado === 'lista') { el.className = 'nuevo'; el.textContent = t('update.lista', { version: r.version }) }
+  else if (r.estado === 'descargando') { el.className = 'nuevo'; el.textContent = t('update.descargando', { version: r.version }) }
+  else if (r.estado === 'store') { el.className = 'ok'; el.textContent = t('update.store') }
+  else if (r.estado === 'dev') { el.textContent = t('update.dev') }
+  else { el.textContent = t('update.error') }
+}
+
 async function checkUpdateUI() {
   const el = document.getElementById('about-update-state')
   const btn = document.getElementById('btn-check-update')
   if (!el || !btn) return
   el.className = ''
-  el.textContent = 'Comprobando…'
+  el.textContent = t('about.comprobando')
   btn.disabled = true
   const r = await window.yukiAPI.checkUpdate().catch(() => ({ estado: 'error' }))
   btn.disabled = false
-  if (r.estado === 'al-dia') { el.className = 'ok'; el.textContent = 'Estás al día' }
-  else if (r.estado === 'lista') { el.className = 'nuevo'; el.textContent = `Yuki ${r.version} lista — reinicia para instalarla` }
-  else if (r.estado === 'descargando') { el.className = 'nuevo'; el.textContent = `Descargando Yuki ${r.version}…` }
-  else if (r.estado === 'store') { el.className = 'ok'; el.textContent = 'Se actualiza desde Microsoft Store' }
-  else if (r.estado === 'dev') { el.textContent = 'Versión de desarrollo o portable: sin auto-update' }
-  else { el.textContent = 'No se pudo comprobar (¿sin conexión?)' }
+  ultimoUpdate = r
+  pintarEstadoUpdate(r)
 }
 
 // ── Cachés en disco ───────────────────────────────────────────────────────────
@@ -549,9 +602,8 @@ async function renderCaches() {
   if (!list || !total) return
   const items = await window.yukiAPI.cacheUsage().catch(() => [])
   const suma = items.reduce((a, b) => a + b.mb, 0)
-  total.textContent = suma > 1024
-    ? `${(suma / 1024).toFixed(1)} GB en total — se puede liberar sin cerrar sesión`
-    : `${suma} MB en total — se puede liberar sin cerrar sesión`
+  const tamano = suma > 1024 ? `${(suma / 1024).toFixed(1)} GB` : `${suma} MB`
+  total.textContent = t('datos.caches.total', { tamano })
   const apps = loadApps()
   list.innerHTML = items.filter(i => i.mb >= 1).map(i => {
     const app = apps.find(a => a.id === i.id)
@@ -559,13 +611,13 @@ async function renderCaches() {
     return `<div class="cache-item">
       <span class="nom">${esc(app ? app.name : i.id)}</span>
       <span class="mb">${mb}</span>
-      <button data-id="${esc(i.id)}">Liberar</button>
+      <button data-id="${esc(i.id)}">${esc(t('datos.caches.btn'))}</button>
     </div>`
   }).join('')
   list.querySelectorAll('button[data-id]').forEach(b => b.addEventListener('click', async () => {
     b.disabled = true; b.textContent = '...'
     await window.yukiAPI.clearCaches(b.dataset.id)
-    showToast('Caché liberada')
+    showToast(t('toast.cacheLiberada'))
     renderCaches()
   }))
 }
@@ -576,7 +628,7 @@ async function renderPermissions() {
   if (!list) return
   const items = await window.yukiAPI.listPermissions().catch(() => [])
   if (!items.length) {
-    list.innerHTML = '<div class="perm-empty">Ningún sitio ha pedido permisos todavía</div>'
+    list.innerHTML = `<div class="perm-empty">${esc(t('datos.permisos.vacio'))}</div>`
     return
   }
   list.innerHTML = items.map(p => `
@@ -585,14 +637,14 @@ async function renderPermissions() {
         <span class="perm-origin">${esc(p.origin.replace(/^https?:\/\//, ''))}</span>
         <span class="perm-label">${esc(p.label)}</span>
       </div>
-      <button class="perm-state ${p.allowed ? 'ok' : 'no'}" data-origin="${esc(p.origin)}" data-perm="${esc(p.permission)}" data-allowed="${p.allowed ? 1 : 0}" title="Click para cambiar">${p.allowed ? 'Permitido' : 'Bloqueado'}</button>
-      <button class="icon-btn perm-del" data-origin="${esc(p.origin)}" data-perm="${esc(p.permission)}" title="Olvidar (volverá a preguntar)" aria-label="Olvidar"><i data-lucide="x" class="icon-lucide"></i></button>
+      <button class="perm-state ${p.allowed ? 'ok' : 'no'}" data-origin="${esc(p.origin)}" data-perm="${esc(p.permission)}" data-allowed="${p.allowed ? 1 : 0}" title="${esc(t('perm.clickCambiar'))}">${esc(t(p.allowed ? 'perm.permitido' : 'perm.bloqueado'))}</button>
+      <button class="icon-btn perm-del" data-origin="${esc(p.origin)}" data-perm="${esc(p.permission)}" title="${esc(t('perm.olvidar'))}" aria-label="${esc(t('perm.olvidar'))}"><i data-lucide="x" class="icon-lucide"></i></button>
     </div>`).join('')
   list.querySelectorAll('.perm-state').forEach(b => b.addEventListener('click', async () => {
     const allowed = b.dataset.allowed !== '1'
     await window.yukiAPI.setPermission(b.dataset.origin, b.dataset.perm, allowed)
     renderPermissions()
-    showToast(`${allowed ? 'Permitido' : 'Bloqueado'} · recarga la app para que lo tome`, 3000)
+    showToast(t('toast.permisoCambiado', { estado: t(allowed ? 'perm.permitido' : 'perm.bloqueado') }), 3000)
   }))
   list.querySelectorAll('.perm-del').forEach(b => b.addEventListener('click', async () => {
     await window.yukiAPI.removePermission(b.dataset.origin, b.dataset.perm)
@@ -737,7 +789,7 @@ function updateMemoryUI(report) {
   // app y forzando a Chromium a decodificarlos de nuevo una y otra vez.
   if (!document.getElementById('settings-overlay').classList.contains('open')) return
   if (!report || !report.length) {
-    list.innerHTML = '<div style="font-size:11px;color:#667781">Sin apps activas</div>'
+    list.innerHTML = `<div style="font-size:11px;color:#667781">${esc(t('mem.sinApps'))}</div>`
     return
   }
   const apps = loadApps()
@@ -749,7 +801,7 @@ function updateMemoryUI(report) {
       <span style="font-size:14px">${icon}</span>
       <span class="memory-app-name">${esc(name)}</span>
       <span class="memory-mb">${privateMB} MB</span>
-      <button class="icon-btn memory-sleep-btn" data-id="${esc(id)}" title="Liberar memoria"><i data-lucide="moon" class="icon-lucide"></i></button>
+      <button class="icon-btn memory-sleep-btn" data-id="${esc(id)}" title="${esc(t('mem.liberar'))}"><i data-lucide="moon" class="icon-lucide"></i></button>
     </div>`
   }).join('')
   list.querySelectorAll('.memory-sleep-btn').forEach(btn => {
@@ -777,7 +829,7 @@ function hideGoogleAuthBanner() {
     document.getElementById('settings-close-btn').addEventListener('click', closeSettings)
     document.getElementById('btn-hide-window').addEventListener('click', () => window.yukiAPI.hideWindow())
     document.getElementById('btn-quit-app').addEventListener('click', () => {
-      if (confirm('¿Cerrar Yuki completamente?')) window.yukiAPI.quitApp()
+      if (confirm(t('confirm.cerrarYuki'))) window.yukiAPI.quitApp()
     })
 
     document.addEventListener('keydown', (e) => {
@@ -804,7 +856,7 @@ function hideGoogleAuthBanner() {
       if (savedSound === 'custom' && soundFileRow) {
         soundFileRow.style.display = 'flex'
         const d = getCustomSoundData()
-        if (soundFileName) soundFileName.textContent = d ? 'Archivo cargado' : 'Sin archivo'
+        if (soundFileName) soundFileName.textContent = t(d ? 'ajustes.sonido.archivoCargado' : 'ajustes.sonido.sinArchivo')
       }
     }
 
@@ -816,7 +868,7 @@ function hideGoogleAuthBanner() {
     })
     if (dndToggle) dndToggle.addEventListener('change', () => {
       saveSettings({ dnd: dndToggle.checked })
-      showToast(dndToggle.checked ? 'No molestar No molestar activado' : 'Notificaciones Notificaciones activadas')
+      showToast(t(dndToggle.checked ? 'toast.dndOn' : 'toast.dndOff'))
     })
     if (soundSelect) soundSelect.addEventListener('change', () => {
       const val = soundSelect.value
@@ -840,13 +892,13 @@ function hideGoogleAuthBanner() {
             if (soundSelect) soundSelect.value = 'custom'
             if (soundFileRow) soundFileRow.style.display = 'flex'
             if (soundFileName) soundFileName.textContent = file.name
-            showToast('Sonido personalizado guardado')
+            showToast(t('toast.sonidoGuardado'))
             playNotificationSound()
           } catch {
-            showToast('Archivo demasiado grande — usa uno más corto')
+            showToast(t('toast.archivoGrande'))
           }
         }
-        reader.onerror = () => showToast('Error leyendo archivo de audio')
+        reader.onerror = () => showToast(t('toast.errorAudio'))
         reader.readAsDataURL(file)
         this.value = ''
       })
@@ -874,7 +926,7 @@ function hideGoogleAuthBanner() {
     if (lockToggle) lockToggle.checked = !!lockCfg.enabled
 
     window.yukiAPI.hasPin().then(has => {
-      if (pinStatus) pinStatus.textContent = has ? 'PIN configurado' : 'Sin PIN configurado'
+      if (pinStatus) pinStatus.textContent = t(has ? 'seg.pin.configurado' : 'seg.pin.sinConfigurar')
     })
 
     // Activarlo sin PIN dejaba el ajuste en "sí" y la app abierta de par en
@@ -883,19 +935,19 @@ function hideGoogleAuthBanner() {
     if (lockToggle) lockToggle.addEventListener('change', async () => {
       if (lockToggle.checked && !(await window.yukiAPI.hasPin())) {
         lockToggle.checked = false
-        showToast('Primero guarda un PIN aquí abajo', 3500)
+        showToast(t('toast.primeroPin'), 3500)
         return
       }
       saveLock({ ...getLock(), enabled: lockToggle.checked })
     })
     if (pinSaveBtn) pinSaveBtn.addEventListener('click', async () => {
       const val = pinSetupInp.value.trim()
-      if (val.length < 4) { showToast('El PIN debe tener mínimo 4 caracteres'); return }
+      if (val.length < 4) { showToast(t('toast.pinCorto')); return }
       const res = await window.yukiAPI.savePin(val)
       if (res.ok) {
         pinSetupInp.value = ''
-        if (pinStatus) pinStatus.textContent = 'PIN configurado'
-        showToast('PIN guardado')
+        if (pinStatus) pinStatus.textContent = t('seg.pin.configurado')
+        showToast(t('toast.pinGuardado'))
       }
     })
 
@@ -927,11 +979,11 @@ function hideGoogleAuthBanner() {
         resizeImage(e.target.result, 128, resized => {
           const apps = loadApps()
           const app = apps.find(a => a.id === pickerTargetId)
-          if (app) { app.icon = resized; saveApps(apps); render(); showToast('Icono actualizado') }
+          if (app) { app.icon = resized; saveApps(apps); render(); showToast(t('toast.iconoActualizado')) }
           pickerTargetId = null
         })
       }
-      reader.onerror = () => showToast('Error leyendo archivo')
+      reader.onerror = () => showToast(t('toast.errorArchivo'))
       reader.readAsDataURL(file)
     })
 
@@ -945,14 +997,14 @@ function hideGoogleAuthBanner() {
         customSound: getCustomSoundData(),
       }
       const res = await window.yukiAPI.exportConfig(data)
-      if (res.ok) showToast('Backup guardado correctamente', 3000)
-      else if (!res.canceled) showToast('Error al guardar: ' + res.error, 4000)
+      if (res.ok) showToast(t('toast.backupGuardado'), 3000)
+      else if (!res.canceled) showToast(t('toast.errorGuardar', { error: res.error }), 4000)
     })
     document.getElementById('btn-import-config').addEventListener('click', async () => {
       const res = await window.yukiAPI.importConfig()
-      if (!res.ok) { if (!res.canceled) showToast('Error al leer el archivo: ' + res.error, 4000); return }
+      if (!res.ok) { if (!res.canceled) showToast(t('toast.errorLeer', { error: res.error }), 4000); return }
       const { data } = res
-      if (!data || data.version !== 1) { showToast('Archivo de backup no válido', 3000); return }
+      if (!data || data.version !== 1) { showToast(t('toast.backupInvalido'), 3000); return }
       try {
         if (Array.isArray(data.apps)) {
           // Los ids se usan en selectores, atributos y nombres de partition:
@@ -964,9 +1016,9 @@ function hideGoogleAuthBanner() {
         }
         if (data.settings) localStorage.setItem(SETTINGS_KEY, JSON.stringify(data.settings))
         if (data.customSound) localStorage.setItem('yuki-custom-sound', data.customSound)
-        showToast('Configuración restaurada', 2500)
+        showToast(t('toast.configRestaurada'), 2500)
         render()
-      } catch (e) { showToast('Error al restaurar: ' + e.message, 4000) }
+      } catch (e) { showToast(t('toast.errorRestaurar', { error: e.message }), 4000) }
     })
     document.getElementById('btn-open-userdata').addEventListener('click', () => {
       window.yukiAPI.openUserdata()
@@ -980,20 +1032,20 @@ function hideGoogleAuthBanner() {
     }))
 
     document.getElementById('btn-clear-caches').addEventListener('click', async () => {
-      if (!confirm('¿Liberar las cachés de todas las apps?\nNo se cierra ninguna sesión; las apps solo volverán a descargar lo que necesiten.')) return
+      if (!confirm(t('confirm.liberarCaches'))) return
       const btn = document.getElementById('btn-clear-caches')
-      btn.disabled = true; btn.textContent = 'Liberando...'
+      btn.disabled = true; btn.textContent = t('datos.caches.liberando')
       await window.yukiAPI.clearCaches(null)
-      btn.disabled = false; btn.textContent = 'Liberar'
-      showToast('Cachés liberadas')
+      btn.disabled = false; btn.textContent = t('datos.caches.btn')
+      showToast(t('toast.cachesLiberadas'))
       renderCaches()
     })
 
     document.getElementById('btn-reset-permissions').addEventListener('click', async () => {
-      if (!confirm('¿Olvidar todas las decisiones de cámara, micrófono y ubicación?\nLos sitios volverán a preguntar.')) return
+      if (!confirm(t('confirm.olvidarPermisos'))) return
       await window.yukiAPI.resetPermissions()
       renderPermissions()
-      showToast('Permisos de sitios reiniciados')
+      showToast(t('toast.permisosReiniciados'))
     })
 
     // Logo del overlay: fallback sin handler inline (la CSP no permite onerror="")
@@ -1052,7 +1104,7 @@ window.yukiAPI.on('session:cleared', ({ id }) => {
   const app = loadApps().find(a => a.id === id)
   // El main ya volvió a cargar la URL base (viewManager.restart); no se cambia
   // de app para no tapar el panel de settings desde donde se limpió
-  showToast(`Sesión de ${app ? app.name : id} limpiada`, 2500)
+  showToast(t('toast.sesionLimpiada', { nombre: app ? app.name : id }), 2500)
 })
 
 window.yukiAPI.on('google-auth-done', (partition) => {
@@ -1062,7 +1114,7 @@ window.yukiAPI.on('google-auth-done', (partition) => {
   if (!app) return
   window.yukiAPI.openView(app.id, 'https://mail.google.com/mail/u/0/', `persist:${app.id}`).catch(() => { })
   switchTo(app.id)
-  showToast('Sesion iniciada — cargando Gmail...', 3000)
+  showToast(t('toast.sesionGmail'), 3000)
 })
 
 window.yukiAPI.on('yuki-window-show', () => {
@@ -1073,9 +1125,10 @@ window.yukiAPI.on('yuki-window-show', () => {
 // Actualización descargada (electron-updater): el usuario decide cuándo reiniciar.
 // Si no lo hace, se instala sola al cerrar Yuki.
 window.yukiAPI.on('update:ready', ({ version }) => {
-  const t = document.getElementById('toast-update')
-  t.innerHTML = `Yuki ${esc(version)} lista · <button id="toast-update-btn">Reiniciar ahora</button>`
-  t.classList.add('show')
+  // Se llamaba 't' y tapaba la función de traducción del mismo nombre.
+  const caja = document.getElementById('toast-update')
+  caja.innerHTML = `${esc(t('update.toastLista', { version }))} · <button id="toast-update-btn">${esc(t('update.reiniciarAhora'))}</button>`
+  caja.classList.add('show')
   document.getElementById('toast-update-btn').addEventListener('click', () => window.yukiAPI.installUpdate())
 })
 
@@ -1189,7 +1242,125 @@ async function tryRestoreFromDisk() {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
+// ── Selector de idioma ───────────────────────────────────────────────────────
+function initIdioma() {
+  const sel = document.getElementById('lang-select')
+  if (!sel) return
+  sel.innerHTML = ''
+  for (const { codigo, nombre } of I18N.idiomas) {
+    const op = document.createElement('option')
+    op.value = codigo
+    // textContent y no innerHTML: los nombres llevan acentos y paréntesis, y
+    // no hay razón para que esto pase por el parser de HTML.
+    op.textContent = nombre
+    sel.appendChild(op)
+  }
+  sel.value = I18N.idioma
+  // Una sola vez: si init() falla y se vuelve a llamar a initIdioma() desde su
+  // catch, sin esto quedarían dos manejadores y cada cambio de idioma se
+  // aplicaría —y se avisaría— por duplicado.
+  if (sel.dataset.enganchado) return
+  sel.dataset.enganchado = '1'
+
+  sel.addEventListener('change', async () => {
+    const r = await window.yukiAPI.setIdioma(sel.value).catch(() => null)
+    if (!r || !r.ok) { sel.value = I18N.idioma; return }
+    I18N = { idioma: r.idioma, idiomas: r.idiomas, textos: r.textos }
+    aplicarIdioma()
+    // Lo que se pinta desde JavaScript no lleva data-i18n, así que hay que
+    // volver a dibujarlo a mano. No hace falta reiniciar la app.
+    render()
+    renderPermissions()
+    renderCaches()
+    refrescarAviso()
+    refrescarEstados()
+    showToast(t('toast.idiomaCambiado'))
+  })
+}
+
+// Los textos que dependen del estado y no de una clave fija. No llevan
+// data-i18n a propósito: si lo llevaran, cambiar de idioma los devolvería a su
+// valor por defecto y mentirían — diciendo "Sin PIN configurado" con un PIN
+// puesto, o "Comprobando…" sin estar comprobando nada.
+function refrescarEstados() {
+  const pinStatus = document.getElementById('pin-status')
+  if (pinStatus) {
+    window.yukiAPI.hasPin()
+      .then(has => { pinStatus.textContent = t(has ? 'seg.pin.configurado' : 'seg.pin.sinConfigurar') })
+      .catch(() => {})
+  }
+  const soundFileName = document.getElementById('sound-file-name')
+  if (soundFileName) {
+    const d = getCustomSoundData()
+    soundFileName.textContent = t(d ? 'ajustes.sonido.archivoCargado' : 'ajustes.sonido.sinArchivo')
+  }
+  // Se repinta el último resultado, no se vuelve a consultar: una consulta
+  // puede arrancar la descarga del instalador.
+  pintarEstadoUpdate(ultimoUpdate)
+}
+
+// ── Aviso de Digital Fox ─────────────────────────────────────────────────────
+// El contenido viene de internet: se pinta SIEMPRE con textContent y el enlace
+// se abre fuera. Nada de innerHTML aquí — ver src/main/avisos.js.
+async function refrescarAviso() {
+  const caja = document.getElementById('aviso-banner')
+  if (!caja) return
+  const aviso = await window.yukiAPI.avisoPendiente().catch(() => null)
+  if (!aviso) { caja.style.display = 'none'; return }
+
+  document.getElementById('aviso-titulo').textContent = aviso.titulo
+  document.getElementById('aviso-texto').textContent = aviso.texto
+
+  const btn = document.getElementById('aviso-accion')
+  if (aviso.enlace) {
+    // 'boton' es opcional en avisos.json: sin él, una etiqueta genérica ya
+    // traducida, que es mejor que perder el enlace.
+    btn.textContent = aviso.boton || t('aviso.verMas')
+    btn.style.display = ''
+    btn.onclick = () => window.yukiAPI.openExternal(aviso.enlace)
+  } else {
+    btn.style.display = 'none'
+    btn.onclick = null
+  }
+
+  document.getElementById('aviso-cerrar').onclick = async () => {
+    caja.style.display = 'none'
+    await window.yukiAPI.cerrarAviso(aviso.id).catch(() => {})
+  }
+  caja.style.display = ''
+  if (window.lucide) window.lucide.createIcons()
+}
+
+function initAvisos() {
+  const toggle = document.getElementById('avisos-toggle')
+  if (!toggle) return
+  window.yukiAPI.avisosActivados().then(v => { toggle.checked = v !== false }).catch(() => {})
+  toggle.addEventListener('change', async () => {
+    await window.yukiAPI.activarAvisos(toggle.checked).catch(() => {})
+    if (!toggle.checked) {
+      const caja = document.getElementById('aviso-banner')
+      if (caja) caja.style.display = 'none'
+    } else {
+      // Al encenderlo, mirar enseguida en vez de esperar al próximo ciclo.
+      refrescarAviso()
+    }
+  })
+  // No en el arranque: el proceso principal ni siquiera ha consultado todavía
+  // (espera un minuto a propósito). Y hay un periodo de gracia de 24 h desde
+  // la instalación antes del primer aviso.
+  setTimeout(refrescarAviso, 90 * 1000)
+  // Y se sigue mirando: si la primera consulta falló por estar sin conexión, o
+  // si la sesión dura más que el refresco de 6 h del proceso principal, con una
+  // sola vez el aviso no aparecería nunca. Leer esto es gratis — el proceso
+  // principal responde desde memoria, no sale a la red.
+  setInterval(refrescarAviso, 30 * 60 * 1000)
+}
+
 async function init() {
+  // Lo primero de todo: el resto del arranque ya usa t() para los toasts.
+  aplicarIdioma()
+  initIdioma()
+
   await tryRestoreFromDisk()
   await migratePinFromStorage()
 
@@ -1225,11 +1396,15 @@ async function init() {
   window.yukiAPI.setAutoSleep(autoSleepMinutes)
 
   render()
+  initAvisos()
 }
 
 init().catch(e => {
   console.error('[Yuki] init error:', e)
   // El bloqueo se pide otra vez por si el fallo ocurrió antes de llegar a él
   bloquearSiProcede()
+  // Y los textos otra vez: si init() se cayó antes de aplicarlos, la interfaz
+  // se quedaba en el español del HTML aunque el idioma fuera otro.
+  try { aplicarIdioma(); initIdioma(); initAvisos() } catch (e2) {}
   render()
 })
