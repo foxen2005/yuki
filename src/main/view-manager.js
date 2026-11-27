@@ -89,8 +89,12 @@ const OPCIONES_FLOTANTE = {
 // en francés o en portugués todas las palabras salían subrayadas y el menú
 // contextual solo ofrecía sugerencias en español.
 //
-// Siempre se añade el inglés: medio mundo escribe correos mezclando su idioma
-// con términos en inglés, y tenerlo puesto cuesta poco.
+// Va UN SOLO idioma, el elegido en Configuración. Antes se añadía el inglés
+// además del propio, y eso dejaba al usuario sin las sugerencias de su idioma:
+// Chromium devuelve como mucho cuatro o cinco sugerencias en total repartidas
+// entre los idiomas cargados, y el inglés se las quedaba todas. Medido con
+// «coneccion»: con es-419+en-US salía «connection, Concepcion, coercion,
+// concision»; con es-419 solo, «conexión, confección, colección, convección».
 // Los códigos van por candidatos y se filtran por lo que Chromium tenga: no
 // existe es-CL, y es-419 (Latinoamérica) es el más cercano al español de aquí.
 const CANDIDATOS_CORRECTOR = {
@@ -105,10 +109,9 @@ function aplicarCorrector(ses) {
     const avail = ses.availableSpellCheckerLanguages || []
     const cod = idioma.idioma()
     const propio = (CANDIDATOS_CORRECTOR[cod] || []).find(l => avail.includes(l))
-    const ingles = CANDIDATOS_CORRECTOR['en'].find(l => avail.includes(l))
-    // Set para no repetir el inglés cuando ya es el idioma de la interfaz.
-    const langs = [...new Set([propio, ingles].filter(Boolean))]
-    if (langs.length) ses.setSpellCheckerLanguages(langs)
+    // Lista vacía (y no "no llamar") cuando el idioma no tiene diccionario:
+    // así al cambiar de idioma la sesión no se queda con el anterior puesto.
+    ses.setSpellCheckerLanguages(propio ? [propio] : [])
   } catch (e) {}
 }
 
