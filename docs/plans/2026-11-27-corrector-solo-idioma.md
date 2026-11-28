@@ -1,7 +1,7 @@
 # El corrector ortográfico sigue solo al idioma elegido
 
 **Fecha:** 2026-11-27
-**Estado:** pendiente de aprobación
+**Estado:** ✅ LISTO — en v0.4.8 (commit 2e71539, publicado el 2026-11-27)
 
 ## El problema
 
